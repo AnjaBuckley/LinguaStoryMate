@@ -172,12 +172,17 @@ export class DatabaseStorage implements IStorage {
 
   async createVocabularyItems(data: { userId: number; storyId: number; words: { sourceWord: string; targetWord: string; context?: string }[] }): Promise<VocabularyItem[]> {
     return withRetry(async () => {
+      if (!data.words || data.words.length === 0) {
+        return [];
+      }
+
       const items = data.words.map(word => ({
         userId: data.userId,
         storyId: data.storyId,
         sourceWord: word.sourceWord,
         targetWord: word.targetWord,
         context: word.context,
+        learned: false
       }));
 
       return await db.insert(vocabularyItems).values(items).returning();
