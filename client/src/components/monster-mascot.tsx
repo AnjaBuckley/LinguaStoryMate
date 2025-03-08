@@ -207,15 +207,15 @@ export default function MonsterMascot({ emotion }: MonsterMascotProps) {
         ) : emotion === "happy" ? (
           // Medium happy mouth
           <path
-            d="M90,130 Q110,140 130,130"
+            d="M90,130 Q110,145 130,130"
             stroke="#1e1b4b"
             strokeWidth="4"
             fill="none"
           />
         ) : (
-          // Neutral mouth
+          // Gentle smile for neutral
           <path
-            d="M100,135 Q110,130 120,135"
+            d="M95,135 Q110,140 125,135"
             stroke="#1e1b4b"
             strokeWidth="4"
             fill="none"
