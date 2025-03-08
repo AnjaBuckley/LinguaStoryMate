@@ -245,8 +245,17 @@ export class DatabaseStorage implements IStorage {
   async getRecommendations(userId: number): Promise<Recommendation[]> {
     return withRetry(async () => {
       return await db
-        .select()
+        .select({
+          id: recommendations.id,
+          userId: recommendations.userId,
+          storyId: recommendations.storyId,
+          reason: recommendations.reason,
+          priority: recommendations.priority,
+          viewed: recommendations.viewed,
+          story: stories,
+        })
         .from(recommendations)
+        .leftJoin(stories, eq(recommendations.storyId, stories.id))
         .where(eq(recommendations.userId, userId))
         .orderBy(desc(recommendations.priority));
     });
