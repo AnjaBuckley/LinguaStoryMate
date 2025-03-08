@@ -47,6 +47,18 @@ export async function generateImage(prompt: string) {
   return response.data[0].url;
 }
 
+export async function generateAudio(text: string, voice = "alloy"): Promise<string> {
+  const response = await openai.audio.speech.create({
+    model: "tts-1",
+    voice: voice,
+    input: text,
+  });
+
+  // Convert the response to base64
+  const audioBuffer = Buffer.from(await response.arrayBuffer());
+  return `data:audio/mp3;base64,${audioBuffer.toString('base64')}`;
+}
+
 export async function generateQuiz(content: string): Promise<QuizQuestion[]> {
   const prompt = `Generate 5 multiple choice questions based on this story: ${content}
 

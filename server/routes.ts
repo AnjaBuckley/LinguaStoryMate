@@ -1,22 +1,23 @@
 import type { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { generateStory, generateImage, generateQuiz } from "./lib/openai";
+import { generateStory, generateImage, generateQuiz, generateAudio } from "./lib/openai";
 import { generateStorySchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express) {
   app.post("/api/stories/generate", async (req, res) => {
     try {
       const params = generateStorySchema.parse(req.body);
-      
+
       const storyData = await generateStory(params);
       const imageUrl = await generateImage(storyData.title);
+      const audioUrl = await generateAudio(storyData.content);
       const questions = await generateQuiz(storyData.content);
-      
+
       const story = await storage.createStory({
         ...storyData,
         imageUrl,
-        audioUrl: "", // TODO: Implement audio generation
+        audioUrl,
         sourceLanguage: params.sourceLanguage,
         targetLanguage: params.targetLanguage,
         difficulty: params.difficulty,
