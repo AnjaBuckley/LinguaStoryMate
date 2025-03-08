@@ -25,11 +25,13 @@ import LanguageSelector from "./language-selector";
 import { generateStorySchema, type GenerateStoryRequest } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import LearningBuddy from "./learning-buddy";
 
 export default function StoryGenerator() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [mascotMessage, setMascotMessage] = useState("Let's create a new story! Choose your languages and topic. 📚");
 
   const form = useForm<GenerateStoryRequest>({
     resolver: zodResolver(generateStorySchema),
@@ -57,12 +59,32 @@ export default function StoryGenerator() {
         description: error.message,
         variant: "destructive",
       });
+      setMascotMessage("Oops! Something went wrong. Let's try again! 🔄");
     },
   });
 
   const onSubmit = (data: GenerateStoryRequest) => {
     setIsGenerating(true);
+    setMascotMessage("Creating your personalized story... This will be fun! ✨");
     generateMutation.mutate(data);
+  };
+
+  // Update mascot messages based on form changes
+  const handleFormChange = (field: keyof GenerateStoryRequest) => {
+    switch (field) {
+      case "sourceLanguage":
+        setMascotMessage("Great choice! What's your native language? 🌍");
+        break;
+      case "targetLanguage":
+        setMascotMessage("Perfect! Now choose how challenging you want the story to be. 📊");
+        break;
+      case "difficulty":
+        setMascotMessage("Almost there! What would you like the story to be about? 🎯");
+        break;
+      case "topic":
+        setMascotMessage("That sounds interesting! Click 'Generate Story' when you're ready! 🚀");
+        break;
+    }
   };
 
   return (
@@ -83,7 +105,10 @@ export default function StoryGenerator() {
                     <FormControl>
                       <LanguageSelector
                         value={field.value}
-                        onChange={field.onChange}
+                        onChange={(value) => {
+                          field.onChange(value);
+                          handleFormChange("sourceLanguage");
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -100,7 +125,10 @@ export default function StoryGenerator() {
                     <FormControl>
                       <LanguageSelector
                         value={field.value}
-                        onChange={field.onChange}
+                        onChange={(value) => {
+                          field.onChange(value);
+                          handleFormChange("targetLanguage");
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -116,7 +144,10 @@ export default function StoryGenerator() {
                 <FormItem>
                   <FormLabel>Difficulty Level</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      handleFormChange("difficulty");
+                    }}
                     defaultValue={field.value}
                   >
                     <FormControl>
@@ -145,6 +176,12 @@ export default function StoryGenerator() {
                     <Input
                       placeholder="Enter a topic (e.g. animals, space, family)"
                       {...field}
+                      onChange={(e) => {
+                        field.onChange(e.target.value);
+                        if (e.target.value.length > 0) {
+                          handleFormChange("topic");
+                        }
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -161,6 +198,7 @@ export default function StoryGenerator() {
             </Button>
           </form>
         </Form>
+        <LearningBuddy message={mascotMessage} />
       </CardContent>
     </Card>
   );
