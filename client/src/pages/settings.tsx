@@ -80,13 +80,13 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold text-primary">User Settings</h1>
+          <h1 className="text-4xl font-bold text-primary">{texts.settings}</h1>
           <div className="flex gap-4 items-center">
             <LanguageToggle />
             <Button asChild variant="outline">
               <Link href="/">
                 <Home className="mr-2 h-4 w-4" />
-                Back to Home
+                {texts.backToHome}
               </Link>
             </Button>
           </div>
@@ -97,7 +97,7 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <UserIcon className="h-6 w-6" />
-                Profile Settings
+                {texts.profileSettings}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -109,7 +109,7 @@ export default function SettingsPage() {
                       name="username"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Username</FormLabel>
+                          <FormLabel>{texts.username}</FormLabel>
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
@@ -123,7 +123,7 @@ export default function SettingsPage() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel>{texts.email}</FormLabel>
                           <FormControl>
                             <Input type="email" {...field} />
                           </FormControl>
@@ -138,7 +138,7 @@ export default function SettingsPage() {
                     name="dailyGoalMinutes"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Daily Learning Goal (minutes)</FormLabel>
+                        <FormLabel>{texts.dailyGoal}</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -158,7 +158,7 @@ export default function SettingsPage() {
                     className="w-full"
                     disabled={updateUserMutation.isPending}
                   >
-                    Save Changes
+                    {texts.saveChanges}
                   </Button>
                 </form>
               </Form>
@@ -169,7 +169,7 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Flame className="h-6 w-6 text-orange-500" />
-                Learning Streak
+                {texts.learningStreak}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -178,7 +178,7 @@ export default function SettingsPage() {
                   {user?.currentStreak || 0}
                 </div>
                 <div className="text-lg text-muted-foreground">
-                  days in a row
+                  {texts.daysInARow}
                 </div>
               </div>
             </CardContent>

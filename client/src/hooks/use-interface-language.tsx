@@ -21,7 +21,15 @@ const TRANSLATIONS = {
     advanced: "Advanced",
     learnLanguage: "Language you want to learn",
     motherTongue: "Your mother tongue",
-    selectLanguage: "Select language"
+    selectLanguage: "Select language",
+    profileSettings: "Profile Settings",
+    username: "Username",
+    email: "Email",
+    dailyGoal: "Daily Learning Goal (minutes)",
+    saveChanges: "Save Changes",
+    learningStreak: "Learning Streak",
+    daysInARow: "days in a row",
+    backToHome: "Back to Home"
   },
   de: {
     title: "Sprachlern-Abenteuer",
@@ -39,7 +47,15 @@ const TRANSLATIONS = {
     advanced: "Experte",
     learnLanguage: "Sprache, die du lernen möchtest",
     motherTongue: "Deine Muttersprache",
-    selectLanguage: "Sprache auswählen"
+    selectLanguage: "Sprache auswählen",
+    profileSettings: "Profileinstellungen",
+    username: "Benutzername",
+    email: "E-Mail",
+    dailyGoal: "Tägliches Lernziel (Minuten)",
+    saveChanges: "Änderungen speichern",
+    learningStreak: "Lernserie",
+    daysInARow: "Tage in Folge",
+    backToHome: "Zurück zur Startseite"
   }
 };
 
