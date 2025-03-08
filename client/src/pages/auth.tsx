@@ -18,15 +18,9 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 
 export default function AuthPage() {
+  const [isRegistering, setIsRegistering] = useState(false);
   const [, navigate] = useLocation();
   const { user, loginMutation, registerMutation } = useAuth();
-  const [isRegistering, setIsRegistering] = useState(false);
-
-  // Redirect if already logged in
-  if (user) {
-    navigate("/");
-    return null;
-  }
 
   const form = useForm<InsertUser>({
     resolver: zodResolver(insertUserSchema),
@@ -35,6 +29,12 @@ export default function AuthPage() {
       password: "",
     },
   });
+
+  // Only redirect after all hooks are initialized
+  if (user) {
+    navigate("/");
+    return null;
+  }
 
   const onSubmit = async (data: InsertUser) => {
     if (isRegistering) {
