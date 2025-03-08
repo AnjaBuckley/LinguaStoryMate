@@ -76,11 +76,17 @@ export class RecommendationService {
       languageLevels.set(lang, await this.calculateUserLevel(userId, lang));
     }
 
-    // Generate recommendations
+    // Generate recommendations only for stories that match preferred languages
     for (const story of stories) {
       // Skip stories the user has already completed
       const progress = await storage.getLearningProgress(userId, story.id);
       if (progress?.completed) continue;
+
+      // Only recommend stories that match user's preferred languages
+      if (!preferences.preferredLanguages.includes(story.sourceLanguage) && 
+          !preferences.preferredLanguages.includes(story.targetLanguage)) {
+        continue;
+      }
 
       const userLevel = languageLevels.get(story.sourceLanguage) || "beginner";
       const priority = this.calculatePriority(story, userLevel, preferences);
