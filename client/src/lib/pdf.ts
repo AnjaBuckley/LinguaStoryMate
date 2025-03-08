@@ -23,17 +23,8 @@ export async function exportStoryToPDF(story: Story): Promise<void> {
 
   // Add image
   try {
-    // Convert image URL to Data URL
-    const response = await fetch(story.imageUrl);
-    const blob = await response.blob();
-    const imageData = await new Promise<string>((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.readAsDataURL(blob);
-    });
-
     const imageHeight = 60;
-    pdf.addImage(imageData, "PNG", margin, 45, pageWidth - margin, imageHeight);
+    pdf.addImage(story.imageUrl, "PNG", margin, 45, pageWidth - margin, imageHeight);
 
     // Add story content
     pdf.setFontSize(14);
