@@ -58,7 +58,13 @@ export default function StoryView() {
             <img
               src={story.imageUrl}
               alt={story.title}
-              className="w-full h-64 object-cover rounded-lg mb-6"
+              className="w-full object-contain rounded-lg mb-6"
+              style={{ maxHeight: '500px' }}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                target.nextElementSibling?.classList.remove('hidden');
+              }}
             />
 
             <AudioPlayer url={story.audioUrl} />
