@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { createContext, useContext, useEffect, ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { LearningPreferences } from "@shared/schema";
 
 export const LANGUAGES = {
@@ -7,9 +7,6 @@ export const LANGUAGES = {
     title: "Language Learning Adventures",
     settings: "Learning Preferences",
     stories: "Your Stories",
-    difficulty: "Difficulty",
-    source: "Source",
-    target: "Target",
     createStory: "Create a New Story",
     storyTopic: "Story Topic",
     enterTopic: "Enter a topic (e.g. animals, space, family)",
@@ -28,9 +25,6 @@ export const LANGUAGES = {
     title: "Sprachlern-Abenteuer",
     settings: "Lerneinstellungen",
     stories: "Deine Geschichten",
-    difficulty: "Schwierigkeit",
-    source: "Quelle",
-    target: "Ziel",
     createStory: "Neue Geschichte erstellen",
     storyTopic: "Geschichtenthema",
     enterTopic: "Gib ein Thema ein (z.B. Tiere, Weltall, Familie)",
@@ -49,9 +43,6 @@ export const LANGUAGES = {
     title: "Aventures d'Apprentissage des Langues",
     settings: "Préférences d'apprentissage",
     stories: "Vos Histoires",
-    difficulty: "Difficulté",
-    source: "Source",
-    target: "Cible",
     createStory: "Créer une nouvelle histoire",
     storyTopic: "Thème de l'histoire",
     enterTopic: "Entrez un thème (ex: animaux, espace, famille)",
@@ -70,9 +61,6 @@ export const LANGUAGES = {
     title: "Aventuras de Aprendizaje de Idiomas",
     settings: "Preferencias de aprendizaje",
     stories: "Tus Historias",
-    difficulty: "Dificultad",
-    source: "Origen",
-    target: "Destino",
     createStory: "Crear nueva historia",
     storyTopic: "Tema de la historia",
     enterTopic: "Ingresa un tema (ej: animales, espacio, familia)",
@@ -91,9 +79,6 @@ export const LANGUAGES = {
     title: "Avventure di Apprendimento Linguistico",
     settings: "Preferenze di apprendimento",
     stories: "Le tue Storie",
-    difficulty: "Difficoltà",
-    source: "Origine",
-    target: "Destinazione",
     createStory: "Crea una nuova storia",
     storyTopic: "Tema della storia",
     enterTopic: "Inserisci un tema (es: animali, spazio, famiglia)",
@@ -110,36 +95,25 @@ export const LANGUAGES = {
   }
 };
 
+type LanguageKey = keyof typeof LANGUAGES;
+
 type LanguageContextType = {
-  currentLanguage: keyof typeof LANGUAGES;
-  texts: typeof LANGUAGES[keyof typeof LANGUAGES];
+  texts: typeof LANGUAGES[LanguageKey];
 };
 
 const LanguageContext = createContext<LanguageContextType | null>(null);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const queryClient = useQueryClient();
-  const [currentLanguage, setCurrentLanguage] = useState<keyof typeof LANGUAGES>("English");
-
   const { data: preferences } = useQuery<LearningPreferences>({
     queryKey: ["/api/learning-preferences"],
-    refetchOnMount: true,
-    refetchOnWindowFocus: true
+    refetchInterval: 0
   });
 
-  useEffect(() => {
-    if (preferences?.interfaceLanguage && LANGUAGES[preferences.interfaceLanguage as keyof typeof LANGUAGES]) {
-      setCurrentLanguage(preferences.interfaceLanguage as keyof typeof LANGUAGES);
-    }
-  }, [preferences?.interfaceLanguage]);
+  const languageKey = (preferences?.interfaceLanguage || "English") as LanguageKey;
+  const texts = LANGUAGES[languageKey];
 
   return (
-    <LanguageContext.Provider 
-      value={{ 
-        currentLanguage, 
-        texts: LANGUAGES[currentLanguage] 
-      }}
-    >
+    <LanguageContext.Provider value={{ texts }}>
       {children}
     </LanguageContext.Provider>
   );
