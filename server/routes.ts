@@ -3,18 +3,24 @@ import { createServer } from "http";
 import { storage } from "./storage";
 import { generateStory, generateImage, generateQuiz, generateAudio, extractVocabulary } from "./lib/openai";
 import { generateStorySchema } from "@shared/schema";
+import { setupAuth } from "./auth";
 
 export async function registerRoutes(app: Express) {
+  // Set up authentication routes and middleware
+  setupAuth(app);
+
+  // Existing routes...
   app.post("/api/stories/generate", async (req, res) => {
     try {
-      const params = generateStorySchema.parse(req.body);
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
 
+      const params = generateStorySchema.parse(req.body);
       const storyData = await generateStory(params);
       const imageUrl = await generateImage(storyData.title);
       const audioUrl = await generateAudio(storyData.content);
       const questions = await generateQuiz(storyData.content);
-
-      // Extract vocabulary
       const vocabulary = await extractVocabulary(
         storyData.content,
         params.sourceLanguage,
@@ -28,9 +34,9 @@ export async function registerRoutes(app: Express) {
         sourceLanguage: params.sourceLanguage,
         targetLanguage: params.targetLanguage,
         difficulty: params.difficulty,
+        userId: req.user.id, // Add user ID to story
       });
 
-      // Create vocabulary items
       await Promise.all(
         vocabulary.map((item) =>
           storage.createVocabularyItem({
@@ -48,7 +54,6 @@ export async function registerRoutes(app: Express) {
         questions,
       });
 
-      // Create matching game
       const game = await storage.createGame({
         storyId: story.id,
         type: "matching",
@@ -68,9 +73,13 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  app.get("/api/stories", async (_req, res) => {
+  // Update listStories to only return user's stories
+  app.get("/api/stories", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
     const stories = await storage.listStories();
-    res.json(stories);
+    res.json(stories.filter(story => story.userId === req.user.id));
   });
 
   app.get("/api/stories/:id", async (req, res) => {
@@ -91,7 +100,6 @@ export async function registerRoutes(app: Express) {
     res.json(quiz);
   });
 
-  // Add these routes for vocabulary games
   app.get("/api/vocabulary/:storyId", async (req, res) => {
     try {
       const items = await storage.getVocabularyItems(Number(req.params.storyId));

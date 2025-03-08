@@ -1,6 +1,11 @@
-import { stories, quizzes, vocabularyItems, games, type Story, type InsertStory, type Quiz, type InsertQuiz, type VocabularyItem, type InsertVocabularyItem, type Game, type InsertGame } from "@shared/schema";
+import { users, stories, quizzes, vocabularyItems, games, type Story, type InsertStory, type Quiz, type InsertQuiz, type VocabularyItem, type InsertVocabularyItem, type Game, type InsertGame, type User, type InsertUser } from "@shared/schema";
 import { db, checkDatabaseConnection } from "./db";
 import { eq, sql } from "drizzle-orm";
+import session from "express-session";
+import connectPg from "connect-pg-simple";
+import createMemoryStore from "memorystore";
+
+const MemoryStore = createMemoryStore(session);
 
 export interface IStorage {
   createStory(story: InsertStory): Promise<Story>;
@@ -12,6 +17,14 @@ export interface IStorage {
   getVocabularyItems(storyId: number): Promise<VocabularyItem[]>;
   createGame(game: InsertGame): Promise<Game>;
   getGames(storyId: number): Promise<Game[]>;
+
+  // User methods
+  createUser(user: InsertUser): Promise<User>;
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+
+  // Session store
+  sessionStore: session.Store;
 }
 
 const MAX_RETRIES = 3;
@@ -34,6 +47,15 @@ async function withRetry<T>(operation: () => Promise<T>): Promise<T> {
 }
 
 export class DatabaseStorage implements IStorage {
+  sessionStore: session.Store;
+
+  constructor() {
+    // Use MemoryStore for development to avoid session store setup issues
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    });
+  }
+
   async createStory(story: InsertStory): Promise<Story> {
     return withRetry(async () => {
       // Create the new story
@@ -65,7 +87,7 @@ export class DatabaseStorage implements IStorage {
 
   async createQuiz(quiz: InsertQuiz): Promise<Quiz> {
     return withRetry(async () => {
-      const [newQuiz] = await db.insert(quizzes).values(quiz).returning();
+      const [newQuiz] = await db.insert(quizzes).values([quiz]).returning();
       return newQuiz;
     });
   }
@@ -98,7 +120,7 @@ export class DatabaseStorage implements IStorage {
 
   async createGame(game: InsertGame): Promise<Game> {
     return withRetry(async () => {
-      const [newGame] = await db.insert(games).values(game).returning();
+      const [newGame] = await db.insert(games).values([game]).returning();
       return newGame;
     });
   }
@@ -109,6 +131,27 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(games)
         .where(eq(games.storyId, storyId));
+    });
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    return withRetry(async () => {
+      const [newUser] = await db.insert(users).values(user).returning();
+      return newUser;
+    });
+  }
+
+  async getUser(id: number): Promise<User | undefined> {
+    return withRetry(async () => {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user;
+    });
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return withRetry(async () => {
+      const [user] = await db.select().from(users).where(eq(users.username, username));
+      return user;
     });
   }
 }

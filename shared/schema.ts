@@ -1,9 +1,17 @@
-import { pgTable, text, serial, integer, json, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, json, timestamp, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const stories = pgTable("stories", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
   title: text("title").notNull(),
   content: text("content").notNull(),
   sourceLanguage: text("source_language").notNull(),
@@ -77,6 +85,14 @@ export const insertGameSchema = createInsertSchema(games).omit({
   createdAt: true,
 });
 
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  username: z.string().min(3, "Username must be at least 3 characters"),
+});
+
 // Types for frontend
 export type Story = typeof stories.$inferSelect;
 export type InsertStory = z.infer<typeof insertStorySchema>;
@@ -86,6 +102,8 @@ export type VocabularyItem = typeof vocabularyItems.$inferSelect;
 export type InsertVocabularyItem = z.infer<typeof insertVocabularyItemSchema>;
 export type Game = typeof games.$inferSelect;
 export type InsertGame = z.infer<typeof insertGameSchema>;
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
 
 export const generateStorySchema = z.object({
   sourceLanguage: z.string(),
