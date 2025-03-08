@@ -5,12 +5,33 @@ import { Button } from "@/components/ui/button";
 import { Story } from "@shared/schema";
 import AudioPlayer from "@/components/audio-player";
 import { Book, Brain } from "lucide-react";
+import { exportStoryToPDF } from "@/lib/pdf";
+import { useToast } from "@/hooks/use-toast";
 
 export default function StoryView() {
   const { id } = useParams();
+  const { toast } = useToast();
   const { data: story, isLoading } = useQuery<Story>({
     queryKey: [`/api/stories/${id}`],
   });
+
+  const handleExportPDF = async () => {
+    if (!story) return;
+
+    try {
+      await exportStoryToPDF(story);
+      toast({
+        title: "Success",
+        description: "Story exported to PDF successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to export story to PDF",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -39,7 +60,7 @@ export default function StoryView() {
               alt={story.title}
               className="w-full h-64 object-cover rounded-lg mb-6"
             />
-            
+
             <AudioPlayer url={story.audioUrl} />
 
             <div className="mt-6 prose max-w-none">
@@ -66,7 +87,7 @@ export default function StoryView() {
               Take Quiz
             </Link>
           </Button>
-          <Button variant="outline" className="flex-1">
+          <Button variant="outline" className="flex-1" onClick={handleExportPDF}>
             <Book className="mr-2 h-4 w-4" />
             Export PDF
           </Button>
