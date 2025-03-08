@@ -1,4 +1,4 @@
-import { users, stories, quizzes, vocabularyItems, games, type Story, type InsertStory, type Quiz, type InsertQuiz, type VocabularyItem, type InsertVocabularyItem, type Game, type InsertGame, type User, type InsertUser, type LearningProgress, type InsertLearningProgress, type LearningPreferences, type InsertLearningPreferences, type Recommendation, type InsertRecommendation } from "@shared/schema";
+import { users, stories, quizzes, vocabularyItems, games, learningProgress, learningPreferences, recommendations, type Story, type InsertStory, type Quiz, type InsertQuiz, type VocabularyItem, type InsertVocabularyItem, type Game, type InsertGame, type User, type InsertUser, type LearningProgress, type InsertLearningProgress, type LearningPreferences, type InsertLearningPreferences, type Recommendation, type InsertRecommendation } from "@shared/schema";
 import { db, checkDatabaseConnection } from "./db";
 import { eq, sql, and, desc } from "drizzle-orm";
 import session from "express-session";
