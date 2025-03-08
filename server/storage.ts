@@ -1,5 +1,5 @@
 import { stories, quizzes, type Story, type InsertStory, type Quiz, type InsertQuiz } from "@shared/schema";
-import { db } from "./db";
+import { db, checkDatabaseConnection } from "./db";
 import { eq } from "drizzle-orm";
 
 export interface IStorage {
@@ -10,32 +10,61 @@ export interface IStorage {
   getQuiz(storyId: number): Promise<Quiz | undefined>;
 }
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000;
+
+async function withRetry<T>(operation: () => Promise<T>): Promise<T> {
+  let lastError;
+  for (let i = 0; i < MAX_RETRIES; i++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      if (i < MAX_RETRIES - 1) {
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+        await checkDatabaseConnection();
+      }
+    }
+  }
+  throw lastError;
+}
+
 export class DatabaseStorage implements IStorage {
   async createStory(story: InsertStory): Promise<Story> {
-    const [newStory] = await db.insert(stories).values(story).returning();
-    return newStory;
+    return withRetry(async () => {
+      const [newStory] = await db.insert(stories).values(story).returning();
+      return newStory;
+    });
   }
 
   async getStory(id: number): Promise<Story | undefined> {
-    const [story] = await db.select().from(stories).where(eq(stories.id, id));
-    return story;
+    return withRetry(async () => {
+      const [story] = await db.select().from(stories).where(eq(stories.id, id));
+      return story;
+    });
   }
 
   async listStories(): Promise<Story[]> {
-    return await db.select().from(stories);
+    return withRetry(async () => {
+      return await db.select().from(stories);
+    });
   }
 
   async createQuiz(quiz: InsertQuiz): Promise<Quiz> {
-    const [newQuiz] = await db.insert(quizzes).values(quiz).returning();
-    return newQuiz;
+    return withRetry(async () => {
+      const [newQuiz] = await db.insert(quizzes).values(quiz).returning();
+      return newQuiz;
+    });
   }
 
   async getQuiz(storyId: number): Promise<Quiz | undefined> {
-    const [quiz] = await db
-      .select()
-      .from(quizzes)
-      .where(eq(quizzes.storyId, storyId));
-    return quiz;
+    return withRetry(async () => {
+      const [quiz] = await db
+        .select()
+        .from(quizzes)
+        .where(eq(quizzes.storyId, storyId));
+      return quiz;
+    });
   }
 }
 
