@@ -2,6 +2,15 @@ import { pgTable, text, serial, json, timestamp, integer, boolean } from "drizzl
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Progress Levels Configuration
+export const PROGRESS_LEVELS = {
+  BEGINNER: { name: "Beginner", requiredStories: 0, badge: "🌱" },
+  EXPLORER: { name: "Explorer", requiredStories: 5, badge: "🌟" },
+  ADVENTURER: { name: "Adventurer", requiredStories: 15, badge: "🚀" },
+  MASTER: { name: "Master", requiredStories: 30, badge: "👑" },
+  LEGEND: { name: "Legend", requiredStories: 50, badge: "🏆" }
+};
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
@@ -10,6 +19,7 @@ export const users = pgTable("users", {
   interfaceLanguage: text("interface_language").default("en"),
   dailyGoalMinutes: integer("daily_goal_minutes").default(30),
   currentStreak: integer("current_streak").default(0),
+  storiesCompleted: integer("stories_completed").default(0),
   lastActivityDate: timestamp("last_activity_date").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
   resetPasswordToken: text("reset_password_token"),
@@ -30,7 +40,6 @@ export const stories = pgTable("stories", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Add completedStories table to track story completion
 export const completedStories = pgTable("completed_stories", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id),
@@ -75,6 +84,7 @@ export const insertUserSchema = createInsertSchema(users).omit({
   dailyGoalMinutes: true,
   resetPasswordToken: true,
   resetPasswordExpires: true,
+  storiesCompleted: true,
 }).extend({
   password: z.string().min(6, "Password must be at least 6 characters"),
   username: z.string().min(3, "Username must be at least 3 characters"),
@@ -124,3 +134,36 @@ export type InsertQuiz = z.infer<typeof insertQuizSchema>;
 export type VocabularyItem = typeof vocabularyItems.$inferSelect;
 export type InsertVocabularyItem = z.infer<typeof insertVocabularyItemSchema>;
 export type GenerateStoryRequest = z.infer<typeof generateStorySchema>;
+
+// Helper function to calculate user level
+export function calculateUserLevel(storiesCompleted: number) {
+  const levels = Object.entries(PROGRESS_LEVELS);
+  for (let i = levels.length - 1; i >= 0; i--) {
+    if (storiesCompleted >= levels[i][1].requiredStories) {
+      return levels[i][1];
+    }
+  }
+  return PROGRESS_LEVELS.BEGINNER;
+}
+
+// Helper function to calculate progress to next level
+export function calculateProgressToNextLevel(storiesCompleted: number) {
+  const levels = Object.entries(PROGRESS_LEVELS);
+  for (let i = 0; i < levels.length - 1; i++) {
+    const currentRequirement = levels[i][1].requiredStories;
+    const nextRequirement = levels[i + 1][1].requiredStories;
+    if (storiesCompleted >= currentRequirement && storiesCompleted < nextRequirement) {
+      const progress = (storiesCompleted - currentRequirement) / (nextRequirement - currentRequirement);
+      return {
+        progress: Math.min(progress * 100, 100),
+        nextLevel: levels[i + 1][1],
+        storiesUntilNextLevel: nextRequirement - storiesCompleted
+      };
+    }
+  }
+  return {
+    progress: 100,
+    nextLevel: null,
+    storiesUntilNextLevel: 0
+  };
+}

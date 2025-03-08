@@ -160,7 +160,7 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  // Update the story completion endpoint
+  // Update the story completion endpoint to use progress instead of streaks
   app.post("/api/stories/:id/complete", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -179,9 +179,10 @@ export async function registerRoutes(app: Express) {
         quizScore
       });
 
-      // Update user streak
-      const user = await storage.updateUserStreak(userId);
+      // Update user progress
+      const user = await storage.updateUserProgress(userId);
 
+      // Add vocabulary items if provided
       let vocabularyItems = [];
       if (vocabulary.length > 0) {
         vocabularyItems = await storage.createVocabularyItems({

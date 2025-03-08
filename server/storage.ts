@@ -24,7 +24,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   updateUser(id: number, data: Partial<User>): Promise<User>;
-  updateUserStreak(userId: number): Promise<User>;
+  updateUserProgress(userId: number): Promise<User>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByResetToken(token: string): Promise<User | undefined>;
   hashPassword(password: string): Promise<string>;
@@ -142,52 +142,23 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async updateUserStreak(userId: number): Promise<User> {
+  async updateUserProgress(userId: number): Promise<User> {
     return withRetry(async () => {
       const user = await this.getUser(userId);
       if (!user) throw new Error("User not found");
 
-      // Get user's completed stories to verify activity
-      const completedToday = await db
+      // Get total completed stories for this user
+      const completedStories = await db
         .select()
         .from(completedStories)
-        .where(
-          and(
-            eq(completedStories.userId, userId),
-            sql`DATE(${completedStories.completedAt}) = CURRENT_DATE`
-          )
-        );
+        .where(eq(completedStories.userId, userId));
 
-      if (completedToday.length === 0) {
-        return user; // No stories completed today, don't update streak
-      }
-
-      const lastActivity = user.lastActivityDate ? new Date(user.lastActivityDate) : new Date(0);
-      const today = new Date();
-
-      // Reset hours, minutes, seconds for date comparison
-      lastActivity.setHours(0, 0, 0, 0);
-      today.setHours(0, 0, 0, 0);
-
-      const diffDays = Math.floor((today.getTime() - lastActivity.getTime()) / (1000 * 60 * 60 * 24));
-
-      let currentStreak = user.currentStreak || 0;
-
-      if (diffDays === 0) {
-        // Same day, keep streak
-        currentStreak = currentStreak;
-      } else if (diffDays === 1) {
-        // Next day, increase streak
-        currentStreak += 1;
-      } else {
-        // More than one day gap, reset streak
-        currentStreak = 1;
-      }
+      const storiesCompleted = completedStories.length;
 
       const [updated] = await db
         .update(users)
         .set({
-          currentStreak,
+          storiesCompleted,
           lastActivityDate: new Date()
         })
         .where(eq(users.id, userId))

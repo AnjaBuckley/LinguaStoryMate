@@ -20,6 +20,7 @@ import { useInterfaceLanguage } from "@/hooks/use-interface-language";
 import { Home, Flame, User as UserIcon } from "lucide-react";
 import { Link } from "wouter";
 import LanguageToggle from "@/components/language-toggle";
+import LearningProgress from "@/components/learning-progress"; 
 
 export default function SettingsPage() {
   const { toast } = useToast();
@@ -212,24 +213,8 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Flame className="h-6 w-6 text-orange-500" />
-                {texts.learningStreak}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                <div className="text-5xl font-bold text-orange-500">
-                  {user?.currentStreak || 0}
-                </div>
-                <div className="text-lg text-muted-foreground">
-                  {texts.daysInARow}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {user && <LearningProgress user={user} />} 
+
         </div>
       </div>
     </div>
