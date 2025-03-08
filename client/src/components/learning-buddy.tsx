@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import { useSoundEffects } from "@/hooks/use-sound-effects";
+import MonsterMascot from "./monster-mascot";
 
 interface LearningBuddyProps {
   currentScore?: number;
@@ -89,15 +90,13 @@ export default function LearningBuddy({
           <div className="absolute bottom-4 right-[-8px] w-0 h-0 border-solid border-8 border-background border-r-transparent border-b-transparent transform rotate-45" />
         </motion.div>
 
-        {/* Mascot character */}
+        {/* Monster mascot */}
         <motion.div
-          className="w-32 h-32 bg-background rounded-full shadow-lg flex items-center justify-center"
+          className="w-32 h-32 bg-background rounded-full shadow-lg flex items-center justify-center p-2"
           animate={
             emotion === "celebrating"
               ? {
                   y: [-10, 0, -10],
-                  rotate: [-5, 0, 5],
-                  scale: [1, 1.1, 1],
                 }
               : emotion === "happy"
               ? {
@@ -111,52 +110,7 @@ export default function LearningBuddy({
             repeatType: "reverse",
           }}
         >
-          <motion.div className="w-24 h-24 relative">
-            {/* Mascot face */}
-            <div className="w-full h-full rounded-full bg-primary/20 flex items-center justify-center relative">
-              {emotion === "celebrating" ? (
-                <>
-                  <span className="text-4xl">🎉</span>
-                  <motion.div
-                    className="absolute top-0 left-1/2 -translate-x-1/2 w-full text-center"
-                    initial={{ y: -20, opacity: 0 }}
-                    animate={{ y: -30, opacity: 1 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    ⭐
-                  </motion.div>
-                </>
-              ) : emotion === "happy" ? (
-                <span className="text-4xl">😊</span>
-              ) : (
-                <span className="text-4xl">🤔</span>
-              )}
-            </div>
-
-            {/* Celebration particles */}
-            {emotion === "celebrating" && (
-              <>
-                {[...Array(6)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute w-2 h-2 bg-primary rounded-full"
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{
-                      opacity: [0, 1, 0],
-                      scale: [0, 1, 0],
-                      x: [-20 + Math.random() * 40, -30 + Math.random() * 60],
-                      y: [-20 + Math.random() * 40, -40 + Math.random() * 80],
-                    }}
-                    transition={{
-                      duration: 1,
-                      repeat: Infinity,
-                      delay: i * 0.2,
-                    }}
-                  />
-                ))}
-              </>
-            )}
-          </motion.div>
+          <MonsterMascot emotion={emotion} />
         </motion.div>
       </motion.div>
     </AnimatePresence>
