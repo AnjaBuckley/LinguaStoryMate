@@ -24,26 +24,44 @@ import { insertLearningPreferencesSchema, type LearningPreferences } from "@shar
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import LearningBuddy from "@/components/learning-buddy";
-import { Goal } from "lucide-react";
+import { Goal, Flame } from "lucide-react";
 
-const LANGUAGES = [
-  "English",
-  "Spanish",
-  "French",
-  "German",
-  "Italian",
-  "Portuguese",
-  "Chinese",
-  "Japanese",
-  "Korean",
-  "Turkish",
-  "Swedish",
-  "Russian",
-];
+const LANGUAGES = {
+  "English": {
+    welcome: "Let's personalize your learning journey! 📚",
+    success: "Great choices! I'll help you learn in English! 🌟",
+    error: "Oops! Something went wrong. Let's try again! 🔄",
+    goalUpdate: "Setting goals is the first step to success! 🎯"
+  },
+  "Deutsch": {
+    welcome: "Lass uns deine Lernreise personalisieren! 📚",
+    success: "Tolle Auswahl! Ich helfe dir beim Lernen auf Deutsch! 🌟",
+    error: "Ups! Etwas ist schiefgegangen. Versuchen wir es nochmal! 🔄",
+    goalUpdate: "Ziele zu setzen ist der erste Schritt zum Erfolg! 🎯"
+  },
+  "Français": {
+    welcome: "Personnalisons votre parcours d'apprentissage ! 📚",
+    success: "Excellents choix ! Je vais vous aider à apprendre en français ! 🌟",
+    error: "Oups ! Quelque chose s'est mal passé. Réessayons ! 🔄",
+    goalUpdate: "Se fixer des objectifs est la première étape vers la réussite ! 🎯"
+  },
+  "Español": {
+    welcome: "¡Personalicemos tu viaje de aprendizaje! 📚",
+    success: "¡Excelentes elecciones! ¡Te ayudaré a aprender en español! 🌟",
+    error: "¡Ups! Algo salió mal. ¡Intentémoslo de nuevo! 🔄",
+    goalUpdate: "¡Establecer metas es el primer paso hacia el éxito! 🎯"
+  },
+  "Italiano": {
+    welcome: "Personalizziamo il tuo percorso di apprendimento! 📚",
+    success: "Ottime scelte! Ti aiuterò a imparare in italiano! 🌟",
+    error: "Ops! Qualcosa è andato storto. Riproviamo! 🔄",
+    goalUpdate: "Stabilire obiettivi è il primo passo verso il successo! 🎯"
+  }
+};
 
 export default function LearningPreferencesPage() {
   const { toast } = useToast();
-  const [mascotMessage, setMascotMessage] = useState("Let's personalize your learning journey! 📚");
+  const [mascotMessage, setMascotMessage] = useState(LANGUAGES["English"].welcome);
 
   const { data: preferences, isLoading } = useQuery<LearningPreferences>({
     queryKey: ["/api/learning-preferences"],
@@ -52,10 +70,7 @@ export default function LearningPreferencesPage() {
   const form = useForm({
     resolver: zodResolver(insertLearningPreferencesSchema),
     defaultValues: {
-      preferredLanguages: [],
-      preferredTopics: [],
-      preferredDifficulty: "beginner",
-      learningGoals: [],
+      interfaceLanguage: "English",
       dailyGoalMinutes: 30,
     },
     values: preferences,
@@ -66,12 +81,13 @@ export default function LearningPreferencesPage() {
       const res = await apiRequest("POST", "/api/learning-preferences", data);
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Preferences saved",
         description: "Your learning preferences have been updated",
       });
-      setMascotMessage("Great choices! I'll help you learn in your preferred style! 🌟");
+      const messages = LANGUAGES[data.interfaceLanguage as keyof typeof LANGUAGES];
+      setMascotMessage(messages.success);
     },
     onError: (error) => {
       toast({
@@ -79,7 +95,7 @@ export default function LearningPreferencesPage() {
         description: error.message,
         variant: "destructive",
       });
-      setMascotMessage("Oops! Something went wrong. Let's try again! 🔄");
+      setMascotMessage(LANGUAGES[form.getValues("interfaceLanguage")].error);
     },
   });
 
@@ -116,79 +132,30 @@ export default function LearningPreferencesPage() {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <FormField
                     control={form.control}
-                    name="preferredLanguages"
+                    name="interfaceLanguage"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Languages you want to learn</FormLabel>
-                        <FormControl>
-                          <Select
-                            onValueChange={(value) => {
-                              field.onChange([...field.value, value]);
-                              setMascotMessage("Excellent language choices! What topics interest you? 🌍");
-                            }}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select languages" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {LANGUAGES.map((lang) => (
-                                <SelectItem key={lang} value={lang}>
-                                  {lang}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="preferredDifficulty"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Preferred Difficulty Level</FormLabel>
+                        <FormLabel>Interface Language</FormLabel>
                         <Select
                           onValueChange={(value) => {
                             field.onChange(value);
-                            setMascotMessage("Perfect! Let's set your daily learning goals! ⏰");
+                            setMascotMessage(LANGUAGES[value as keyof typeof LANGUAGES].welcome);
                           }}
                           defaultValue={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select difficulty" />
+                              <SelectValue placeholder="Select language" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="beginner">Beginner</SelectItem>
-                            <SelectItem value="intermediate">Intermediate</SelectItem>
-                            <SelectItem value="advanced">Advanced</SelectItem>
+                            {Object.keys(LANGUAGES).map((lang) => (
+                              <SelectItem key={lang} value={lang}>
+                                {lang}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="preferredTopics"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Preferred Topics</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter topics (comma-separated, e.g., travel, food, culture)"
-                            value={field.value.join(", ")}
-                            onChange={(e) => {
-                              field.onChange(e.target.value.split(",").map((t) => t.trim()));
-                              setMascotMessage("Those are interesting topics! 📚");
-                            }}
-                          />
-                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -203,10 +170,10 @@ export default function LearningPreferencesPage() {
                         <FormControl>
                           <Input
                             type="number"
-                            value={field.value}
+                            {...field}
                             onChange={(e) => {
                               field.onChange(Number(e.target.value));
-                              setMascotMessage("Setting goals is the first step to achieving them! 🎯");
+                              setMascotMessage(LANGUAGES[form.getValues("interfaceLanguage")].goalUpdate);
                             }}
                           />
                         </FormControl>
@@ -226,6 +193,27 @@ export default function LearningPreferencesPage() {
               </Form>
             </CardContent>
           </Card>
+
+          {preferences && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Flame className="h-6 w-6 text-orange-500" />
+                  Daily Streak
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-4">
+                  <div className="text-4xl font-bold text-orange-500">
+                    {preferences.currentStreak}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    days in a row
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <LearningBuddy message={mascotMessage} />

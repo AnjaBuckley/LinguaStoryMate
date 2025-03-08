@@ -41,6 +41,7 @@ export interface IStorage {
   getRecommendations(userId: number): Promise<Recommendation[]>;
   markRecommendationViewed(id: number): Promise<void>;
   deleteUserRecommendations(userId: number): Promise<void>;
+  updateLearningStreak(userId: number): Promise<LearningPreferences>; // Added method
 }
 
 const MAX_RETRIES = 3;
@@ -269,6 +270,39 @@ export class DatabaseStorage implements IStorage {
       await db
         .delete(recommendations)
         .where(eq(recommendations.userId, userId));
+    });
+  }
+
+  async updateLearningStreak(userId: number): Promise<LearningPreferences> {
+    return withRetry(async () => {
+      const preferences = await this.getLearningPreferences(userId);
+      if (!preferences) return preferences;
+
+      const lastActivity = new Date(preferences.lastActivityDate);
+      const today = new Date();
+      const diffDays = Math.floor((today.getTime() - lastActivity.getTime()) / (1000 * 60 * 60 * 24));
+
+      let currentStreak = preferences.currentStreak;
+      if (diffDays === 1) {
+        // Continue streak
+        currentStreak += 1;
+      } else if (diffDays > 1) {
+        // Reset streak
+        currentStreak = 1;
+      }
+      // If diffDays === 0, keep current streak (same day)
+
+      const [updated] = await db
+        .update(learningPreferences)
+        .set({
+          currentStreak,
+          lastActivityDate: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(learningPreferences.userId, userId))
+        .returning();
+
+      return updated;
     });
   }
 }

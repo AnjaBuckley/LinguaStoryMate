@@ -124,6 +124,9 @@ export async function registerRoutes(app: Express) {
         completed: true,
       });
 
+      // Update streak when story is completed
+      await storage.updateLearningStreak(userId);
+
       res.json(progress);
     } catch (error) {
       res.status(400).json({ error: error.message });

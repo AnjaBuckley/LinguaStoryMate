@@ -61,15 +61,14 @@ export const learningProgress = pgTable("learning_progress", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Table for learning preferences
+// Simplify learning preferences table
 export const learningPreferences = pgTable("learning_preferences", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id),
-  preferredLanguages: json("preferred_languages").notNull().$type<string[]>(),
-  preferredTopics: json("preferred_topics").notNull().$type<string[]>(),
-  preferredDifficulty: text("preferred_difficulty").notNull(),
-  learningGoals: json("learning_goals").notNull().$type<string[]>(),
+  interfaceLanguage: text("interface_language").notNull(),
   dailyGoalMinutes: integer("daily_goal_minutes").default(30),
+  currentStreak: integer("current_streak").default(0),
+  lastActivityDate: timestamp("last_activity_date").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
@@ -134,9 +133,12 @@ export const insertLearningProgressSchema = createInsertSchema(learningProgress)
   createdAt: true,
 });
 
+// Update schema for the insertLearningPreferences
 export const insertLearningPreferencesSchema = createInsertSchema(learningPreferences).omit({
   id: true,
   updatedAt: true,
+  currentStreak: true,
+  lastActivityDate: true,
 });
 
 export const insertRecommendationSchema = createInsertSchema(recommendations).omit({
