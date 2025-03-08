@@ -1,4 +1,6 @@
-import { InsertStory, Story, Quiz, InsertQuiz, QuizQuestion } from "@shared/schema";
+import { stories, quizzes, type Story, type InsertStory, type Quiz, type InsertQuiz } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   createStory(story: InsertStory): Promise<Story>;
@@ -8,53 +10,33 @@ export interface IStorage {
   getQuiz(storyId: number): Promise<Quiz | undefined>;
 }
 
-export class MemStorage implements IStorage {
-  private stories: Map<number, Story>;
-  private quizzes: Map<number, Quiz>;
-  private storyIdCounter: number;
-  private quizIdCounter: number;
-
-  constructor() {
-    this.stories = new Map();
-    this.quizzes = new Map();
-    this.storyIdCounter = 1;
-    this.quizIdCounter = 1;
-  }
-
+export class DatabaseStorage implements IStorage {
   async createStory(story: InsertStory): Promise<Story> {
-    const id = this.storyIdCounter++;
-    const newStory: Story = {
-      ...story,
-      id,
-      createdAt: new Date(),
-    };
-    this.stories.set(id, newStory);
+    const [newStory] = await db.insert(stories).values(story).returning();
     return newStory;
   }
 
   async getStory(id: number): Promise<Story | undefined> {
-    return this.stories.get(id);
+    const [story] = await db.select().from(stories).where(eq(stories.id, id));
+    return story;
   }
 
   async listStories(): Promise<Story[]> {
-    return Array.from(this.stories.values());
+    return await db.select().from(stories);
   }
 
   async createQuiz(quiz: InsertQuiz): Promise<Quiz> {
-    const id = this.quizIdCounter++;
-    const newQuiz: Quiz = {
-      ...quiz,
-      id,
-    };
-    this.quizzes.set(id, newQuiz);
+    const [newQuiz] = await db.insert(quizzes).values(quiz).returning();
     return newQuiz;
   }
 
   async getQuiz(storyId: number): Promise<Quiz | undefined> {
-    return Array.from(this.quizzes.values()).find(
-      (quiz) => quiz.storyId === storyId
-    );
+    const [quiz] = await db
+      .select()
+      .from(quizzes)
+      .where(eq(quizzes.storyId, storyId));
+    return quiz;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
