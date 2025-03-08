@@ -1,6 +1,6 @@
 import { stories, quizzes, vocabularyItems, games, type Story, type InsertStory, type Quiz, type InsertQuiz, type VocabularyItem, type InsertVocabularyItem, type Game, type InsertGame } from "@shared/schema";
 import { db, checkDatabaseConnection } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 export interface IStorage {
   createStory(story: InsertStory): Promise<Story>;
@@ -36,7 +36,12 @@ async function withRetry<T>(operation: () => Promise<T>): Promise<T> {
 export class DatabaseStorage implements IStorage {
   async createStory(story: InsertStory): Promise<Story> {
     return withRetry(async () => {
+      // Create the new story
       const [newStory] = await db.insert(stories).values(story).returning();
+
+      // Clean up old stories
+      await db.execute(sql`SELECT delete_old_stories()`);
+
       return newStory;
     });
   }
@@ -50,7 +55,11 @@ export class DatabaseStorage implements IStorage {
 
   async listStories(): Promise<Story[]> {
     return withRetry(async () => {
-      return await db.select().from(stories);
+      return await db
+        .select()
+        .from(stories)
+        .orderBy(sql`${stories.createdAt} DESC`)
+        .limit(6);
     });
   }
 
