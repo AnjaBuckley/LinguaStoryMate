@@ -6,6 +6,7 @@ import { Game, VocabularyItem } from "@shared/schema";
 import { Gamepad2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import LearningBuddy from "./learning-buddy";
+import { useSoundEffects } from "@/hooks/use-sound-effects";
 
 interface VocabularyGameProps {
   storyId: number;
@@ -19,6 +20,7 @@ export default function VocabularyGame({ storyId, sourceLanguage, targetLanguage
   const [matchedPairs, setMatchedPairs] = useState<Set<string>>(new Set());
   const [words, setWords] = useState<Array<{ source: string; target: string }>>([]);
   const { toast } = useToast();
+  const { playSound } = useSoundEffects();
 
   useEffect(() => {
     // Fetch vocabulary items for the story
@@ -51,11 +53,13 @@ export default function VocabularyGame({ storyId, sourceLanguage, targetLanguage
 
     if (pair) {
       setMatchedPairs(new Set([...matchedPairs, selectedSource]));
+      playSound("correct");
       toast({
         title: "Correct!",
         description: "You found a match!",
       });
     } else {
+      playSound("incorrect");
       toast({
         title: "Try again",
         description: "These words don't match",
@@ -106,7 +110,7 @@ export default function VocabularyGame({ storyId, sourceLanguage, targetLanguage
               Congratulations! 🎉
             </h3>
             <p className="mb-4">You've matched all the words correctly!</p>
-            <Button onClick={() => window.location.reload()}>
+            <Button onClick={() => {playSound("complete"); window.location.reload()}}>
               Play Again
             </Button>
           </div>
@@ -122,7 +126,10 @@ export default function VocabularyGame({ storyId, sourceLanguage, targetLanguage
                     "w-full",
                     matchedPairs.has(word.source) && "opacity-50 cursor-not-allowed"
                   )}
-                  onClick={() => setSelectedSource(word.source)}
+                  onClick={() => {
+                    playSound("click");
+                    setSelectedSource(word.source);
+                  }}
                   disabled={matchedPairs.has(word.source)}
                 >
                   {word.source}
@@ -144,7 +151,10 @@ export default function VocabularyGame({ storyId, sourceLanguage, targetLanguage
                         (w) => w.target === target && matchedPairs.has(w.source)
                       ) && "opacity-50 cursor-not-allowed"
                     )}
-                    onClick={() => setSelectedTarget(target)}
+                    onClick={() => {
+                      playSound("click");
+                      setSelectedTarget(target);
+                    }}
                     disabled={words.some(
                       (w) => w.target === target && matchedPairs.has(w.source)
                     )}

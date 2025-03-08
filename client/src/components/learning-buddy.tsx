@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
+import { useSoundEffects } from "@/hooks/use-sound-effects";
 
 interface LearningBuddyProps {
   currentScore?: number;
@@ -13,17 +14,26 @@ export default function LearningBuddy({
   showCelebration = false,
 }: LearningBuddyProps) {
   const [emotion, setEmotion] = useState<"neutral" | "happy" | "celebrating">("neutral");
+  const { playSound } = useSoundEffects();
 
   useEffect(() => {
     if (showCelebration) {
       setEmotion("celebrating");
-      const timer = setTimeout(() => setEmotion("happy"), 3000);
+      playSound("celebration");
+      const timer = setTimeout(() => {
+        setEmotion("happy");
+        playSound("correct");
+      }, 3000);
       return () => clearTimeout(timer);
     } else if (currentScore && totalQuestions) {
       const percentage = (currentScore / totalQuestions) * 100;
-      setEmotion(percentage >= 70 ? "happy" : "neutral");
+      const newEmotion = percentage >= 70 ? "happy" : "neutral";
+      if (newEmotion !== emotion) {
+        setEmotion(newEmotion);
+        playSound(percentage >= 70 ? "correct" : "incorrect");
+      }
     }
-  }, [currentScore, totalQuestions, showCelebration]);
+  }, [currentScore, totalQuestions, showCelebration, emotion, playSound]);
 
   return (
     <AnimatePresence mode="wait">
@@ -66,7 +76,7 @@ export default function LearningBuddy({
               <span className="text-4xl">🤔</span>
             )}
           </div>
-          
+
           {/* Celebration particles */}
           {emotion === "celebrating" && (
             <>
