@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
 import {
   Form,
   FormControl,
@@ -25,17 +24,7 @@ import { insertLearningPreferencesSchema, type LearningPreferences } from "@shar
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import LearningBuddy from "@/components/learning-buddy";
-import { Goal, Star, Book } from "lucide-react";
-
-interface Recommendation {
-  id: number;
-  storyId: number;
-  story: {
-    title: string;
-  };
-  reason: string;
-  priority: number;
-}
+import { Goal } from "lucide-react";
 
 const LANGUAGES = [
   "English",
@@ -82,7 +71,7 @@ export default function LearningPreferencesPage() {
         title: "Preferences saved",
         description: "Your learning preferences have been updated",
       });
-      setMascotMessage("Great choices! I'll help you find the perfect content for your learning style! 🌟");
+      setMascotMessage("Great choices! I'll help you learn in your preferred style! 🌟");
     },
     onError: (error) => {
       toast({
@@ -92,11 +81,6 @@ export default function LearningPreferencesPage() {
       });
       setMascotMessage("Oops! Something went wrong. Let's try again! 🔄");
     },
-  });
-
-  const { data: recommendations } = useQuery<Recommendation[]>({
-    queryKey: ["/api/recommendations"],
-    enabled: !!preferences,
   });
 
   const onSubmit = (data: LearningPreferences) => {
@@ -242,39 +226,6 @@ export default function LearningPreferencesPage() {
               </Form>
             </CardContent>
           </Card>
-
-          {recommendations && recommendations.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Star className="h-6 w-6" />
-                  Recommended for You
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4">
-                  {recommendations.map((rec) => (
-                    <Card key={rec.id}>
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="font-semibold">{rec.story.title}</h3>
-                            <p className="text-sm text-muted-foreground">{rec.reason}</p>
-                          </div>
-                          <Button asChild variant="outline">
-                            <Link href={`/story/${rec.storyId}`}>
-                              <Book className="mr-2 h-4 w-4" />
-                              Start Learning
-                            </Link>
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </div>
 
         <LearningBuddy message={mascotMessage} />

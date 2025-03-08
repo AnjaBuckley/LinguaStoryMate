@@ -3,16 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import StoryGenerator from "@/components/story-generator";
 import { Story } from "@shared/schema";
 import { Link } from "wouter";
-import { ImageOff, Settings, Star } from "lucide-react";
+import { ImageOff, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const { data: stories, isLoading } = useQuery<Story[]>({
     queryKey: ["/api/stories"],
-  });
-
-  const { data: recommendations, isLoading: recommendationsLoading } = useQuery({
-    queryKey: ["/api/recommendations"],
   });
 
   return (
@@ -31,34 +27,6 @@ export default function Home() {
         </div>
 
         <StoryGenerator />
-
-        {recommendations && recommendations.length > 0 && (
-          <div className="mt-12 mb-6">
-            <h2 className="text-2xl font-semibold flex items-center gap-2 mb-4">
-              <Star className="h-6 w-6 text-primary" />
-              Recommended for You
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recommendations.map((rec) => (
-                <Link key={rec.id} href={`/story/${rec.storyId}`}>
-                  <Card className="cursor-pointer hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                      <CardTitle>{rec.story.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground mb-4">{rec.reason}</p>
-                      <div className="flex gap-2">
-                        <span className="text-sm bg-secondary/20 px-2 py-1 rounded">
-                          Priority: {rec.priority}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
 
         <h2 className="text-2xl font-semibold mt-12 mb-6">Your Stories</h2>
 

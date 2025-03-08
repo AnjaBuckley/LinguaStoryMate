@@ -4,7 +4,6 @@ import { storage } from "./storage";
 import { generateStory, generateImage, generateQuiz, generateAudio } from "./lib/openai";
 import { generateStorySchema } from "@shared/schema";
 import { setupAuth } from "./auth";
-import { recommendationService } from "./lib/recommendation-service";
 
 export async function registerRoutes(app: Express) {
   // Set up authentication routes and middleware
@@ -88,7 +87,6 @@ export async function registerRoutes(app: Express) {
         });
       }
 
-      await recommendationService.generateRecommendations(userId);
       res.json(preferences);
     } catch (error) {
       res.status(400).json({ error: error.message });
@@ -103,32 +101,6 @@ export async function registerRoutes(app: Express) {
     try {
       const preferences = await storage.getLearningPreferences(req.user.id);
       res.json(preferences);
-    } catch (error) {
-      res.status(400).json({ error: error.message });
-    }
-  });
-
-  app.get("/api/recommendations", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    try {
-      const recommendations = await storage.getRecommendations(req.user.id);
-      res.json(recommendations);
-    } catch (error) {
-      res.status(400).json({ error: error.message });
-    }
-  });
-
-  app.post("/api/recommendations/:id/viewed", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    try {
-      await storage.markRecommendationViewed(Number(req.params.id));
-      res.sendStatus(200);
     } catch (error) {
       res.status(400).json({ error: error.message });
     }
@@ -152,7 +124,6 @@ export async function registerRoutes(app: Express) {
         completed: true,
       });
 
-      await recommendationService.generateRecommendations(userId);
       res.json(progress);
     } catch (error) {
       res.status(400).json({ error: error.message });
