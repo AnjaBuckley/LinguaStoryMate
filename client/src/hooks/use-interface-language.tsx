@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { LearningPreferences } from "@shared/schema";
 
 export const LANGUAGES = {
@@ -10,7 +10,6 @@ export const LANGUAGES = {
     difficulty: "Difficulty",
     source: "Source",
     target: "Target",
-    // Story Generator texts
     createStory: "Create a New Story",
     storyTopic: "Story Topic",
     enterTopic: "Enter a topic (e.g. animals, space, family)",
@@ -119,19 +118,20 @@ type LanguageContextType = {
 const LanguageContext = createContext<LanguageContextType | null>(null);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [currentLanguage, setCurrentLanguage] = useState<keyof typeof LANGUAGES>("English");
 
   const { data: preferences } = useQuery<LearningPreferences>({
     queryKey: ["/api/learning-preferences"],
-    staleTime: 0, // Always fetch fresh data
-    cacheTime: 0, // Don't cache the data
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
 
   useEffect(() => {
     if (preferences?.interfaceLanguage && LANGUAGES[preferences.interfaceLanguage as keyof typeof LANGUAGES]) {
       setCurrentLanguage(preferences.interfaceLanguage as keyof typeof LANGUAGES);
     }
-  }, [preferences?.interfaceLanguage]); // Only run when interfaceLanguage changes
+  }, [preferences?.interfaceLanguage]);
 
   return (
     <LanguageContext.Provider 
