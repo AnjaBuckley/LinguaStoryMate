@@ -143,19 +143,27 @@ export class DatabaseStorage implements IStorage {
       const user = await this.getUser(userId);
       if (!user) throw new Error("User not found");
 
-      const lastActivity = new Date(user.lastActivityDate);
+      const lastActivity = user.lastActivityDate ? new Date(user.lastActivityDate) : new Date(0);
       const today = new Date();
+
+      // Reset hours, minutes, seconds for date comparison
+      lastActivity.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+
       const diffDays = Math.floor((today.getTime() - lastActivity.getTime()) / (1000 * 60 * 60 * 24));
 
-      let currentStreak = user.currentStreak;
-      if (diffDays === 1) {
-        // Continue streak
+      let currentStreak = user.currentStreak || 0;
+
+      if (diffDays === 0) {
+        // Same day, keep streak
+        currentStreak = currentStreak;
+      } else if (diffDays === 1) {
+        // Next day, increase streak
         currentStreak += 1;
-      } else if (diffDays > 1) {
-        // Reset streak
+      } else {
+        // More than one day gap, reset streak
         currentStreak = 1;
       }
-      // If diffDays === 0, keep current streak (same day)
 
       const [updated] = await db
         .update(users)
