@@ -6,8 +6,6 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  role: text("role").notNull().default("student"),
-  preferredLanguage: text("preferred_language").default("en"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -86,30 +84,6 @@ export const recommendations = pgTable("recommendations", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// New table for parent-child relationships
-export const parentChildRelations = pgTable("parent_child_relations", {
-  id: serial("id").primaryKey(),
-  parentId: integer("parent_id").references(() => users.id),
-  childId: integer("child_id").references(() => users.id),
-  relationshipType: text("relationship_type").notNull(), // e.g., "parent", "guardian"
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// New table for learning analytics
-export const learningAnalytics = pgTable("learning_analytics", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
-  period: text("period").notNull(), // "daily", "weekly", "monthly"
-  startDate: timestamp("start_date").notNull(),
-  endDate: timestamp("end_date").notNull(),
-  totalTimeSpent: integer("total_time_spent").notNull(),
-  averageScore: integer("average_score").notNull(),
-  languageProgress: json("language_progress").$type<Record<string, number>>(), // language -> proficiency level
-  strengthAreas: json("strength_areas").$type<string[]>(),
-  improvementAreas: json("improvement_areas").$type<string[]>(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
 // Types
 export type QuizQuestion = {
   question: string;
@@ -170,15 +144,6 @@ export const insertRecommendationSchema = createInsertSchema(recommendations).om
   createdAt: true,
 });
 
-export const insertParentChildRelationSchema = createInsertSchema(parentChildRelations).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const insertLearningAnalyticsSchema = createInsertSchema(learningAnalytics).omit({
-  id: true,
-  createdAt: true,
-});
 
 // Types for frontend
 export type Story = typeof stories.$inferSelect;
@@ -199,14 +164,6 @@ export type LearningPreferences = typeof learningPreferences.$inferSelect;
 export type InsertLearningPreferences = z.infer<typeof insertLearningPreferencesSchema>;
 export type Recommendation = typeof recommendations.$inferSelect;
 export type InsertRecommendation = z.infer<typeof insertRecommendationSchema>;
-export type ParentChildRelation = typeof parentChildRelations.$inferSelect;
-export type InsertParentChildRelation = z.infer<typeof insertParentChildRelationSchema>;
-export type LearningAnalytics = typeof learningAnalytics.$inferSelect;
-export type InsertLearningAnalytics = z.infer<typeof insertLearningAnalyticsSchema>;
-
-export const userRoleSchema = z.enum(["student", "parent"]);
-export type UserRole = z.infer<typeof userRoleSchema>;
-
 
 export const generateStorySchema = z.object({
   sourceLanguage: z.string(),
