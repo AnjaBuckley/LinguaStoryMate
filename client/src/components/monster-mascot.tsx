@@ -72,11 +72,11 @@ export default function MonsterMascot({ emotion }: MonsterMascotProps) {
         <circle cx="70" cy="60" r="15" fill="#fca5a5" />
         <circle cx="130" cy="60" r="15" fill="#fca5a5" />
 
-        {/* Eyes */}
+        {/* Eyes and Glasses */}
         <g>
           {emotion === "happy" || emotion === "celebrating" ? (
             <>
-              {/* Happy eyes */}
+              {/* Happy eyes with glasses */}
               <motion.path
                 d="M80,100 Q90,115 100,100"
                 stroke="#1e1b4b"
@@ -103,6 +103,19 @@ export default function MonsterMascot({ emotion }: MonsterMascotProps) {
               <circle cx="133" cy="102" r="3" fill="white" />
             </>
           )}
+
+          {/* Glasses */}
+          <g stroke="#94a3b8" strokeWidth="2" fill="none">
+            {/* Left lens */}
+            <circle cx="90" cy="105" r="15" />
+            {/* Right lens */}
+            <circle cx="130" cy="105" r="15" />
+            {/* Bridge */}
+            <path d="M105,105 L115,105" />
+            {/* Temple pieces */}
+            <path d="M75,105 L65,100" />
+            <path d="M145,105 L155,100" />
+          </g>
         </g>
 
         {/* Nose */}
@@ -182,19 +195,19 @@ export default function MonsterMascot({ emotion }: MonsterMascotProps) {
           />
         </g>
 
-        {/* Mouth */}
+        {/* Mouth - Made wider and more curved for a bigger smile */}
         {emotion === "celebrating" ? (
           // Wide happy mouth
           <path
-            d="M90,130 Q110,145 130,130"
+            d="M85,130 Q110,150 135,130"
             stroke="#1e1b4b"
             strokeWidth="4"
             fill="none"
           />
         ) : emotion === "happy" ? (
-          // Small happy mouth
+          // Medium happy mouth
           <path
-            d="M100,130 Q110,135 120,130"
+            d="M90,130 Q110,140 130,130"
             stroke="#1e1b4b"
             strokeWidth="4"
             fill="none"
