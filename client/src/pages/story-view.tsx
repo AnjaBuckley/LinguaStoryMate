@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Story } from "@shared/schema";
 import AudioPlayer from "@/components/audio-player";
-import { Book, Brain } from "lucide-react";
+import { Book, Brain, Home } from "lucide-react";
 import { exportStoryToPDF } from "@/lib/pdf";
 import { useToast } from "@/hooks/use-toast";
 import { useLearningCelebration } from "@/hooks/use-learning-celebration";
@@ -82,7 +82,15 @@ export default function StoryView() {
     <div className="min-h-screen bg-background p-8">
       {showConfetti && <ConfettiBurst />}
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-primary mb-8">{story.title}</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-4xl font-bold text-primary">{story.title}</h1>
+          <Button variant="outline" asChild>
+            <Link href="/">
+              <Home className="mr-2 h-4 w-4" />
+              Back to Home
+            </Link>
+          </Button>
+        </div>
 
         <Card className="mb-8">
           <CardContent className="p-6">
