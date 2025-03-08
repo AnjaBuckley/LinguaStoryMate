@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import StoryGenerator from "@/components/story-generator";
 import { Story } from "@shared/schema";
 import { Link } from "wouter";
+import { ImageOff } from "lucide-react";
 
 export default function Home() {
   const { data: stories, isLoading } = useQuery<Story[]>({
@@ -19,7 +20,7 @@ export default function Home() {
         <StoryGenerator />
 
         <h2 className="text-2xl font-semibold mt-12 mb-6">Your Stories</h2>
-        
+
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map((i) => (
@@ -37,11 +38,21 @@ export default function Home() {
                     <CardTitle>{story.title}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <img
-                      src={story.imageUrl}
-                      alt={story.title}
-                      className="w-full h-32 object-cover rounded-md"
-                    />
+                    {story.imageUrl ? (
+                      <img
+                        src={story.imageUrl}
+                        alt={story.title}
+                        className="w-full h-32 object-cover rounded-md"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          target.nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                    ) : null}
+                    <div className={`hidden w-full h-32 bg-muted rounded-md flex items-center justify-center ${!story.imageUrl ? '!flex' : ''}`}>
+                      <ImageOff className="h-8 w-8 text-muted-foreground" />
+                    </div>
                     <div className="mt-4 flex gap-2">
                       <span className="text-sm bg-secondary/20 px-2 py-1 rounded">
                         {story.sourceLanguage} → {story.targetLanguage}
