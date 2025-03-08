@@ -12,6 +12,8 @@ export const users = pgTable("users", {
   currentStreak: integer("current_streak").default(0),
   lastActivityDate: timestamp("last_activity_date").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
+  resetPasswordToken: text("reset_password_token"),
+  resetPasswordExpires: timestamp("reset_password_expires"),
 });
 
 export const stories = pgTable("stories", {
@@ -61,6 +63,8 @@ export const insertUserSchema = createInsertSchema(users).omit({
   lastActivityDate: true,
   interfaceLanguage: true,
   dailyGoalMinutes: true,
+  resetPasswordToken: true,
+  resetPasswordExpires: true,
 }).extend({
   password: z.string().min(6, "Password must be at least 6 characters"),
   username: z.string().min(3, "Username must be at least 3 characters"),

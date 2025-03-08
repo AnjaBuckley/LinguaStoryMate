@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ import LanguageToggle from "@/components/language-toggle";
 export default function SettingsPage() {
   const { toast } = useToast();
   const { texts } = useInterfaceLanguage();
+  const [isResetting, setIsResetting] = useState(false);
 
   const { data: user, isLoading } = useQuery<User>({
     queryKey: ["/api/user"],
@@ -33,7 +35,6 @@ export default function SettingsPage() {
     defaultValues: {
       username: "",
       email: "",
-      password: "",
       dailyGoalMinutes: 30,
     },
     values: user,
@@ -61,8 +62,44 @@ export default function SettingsPage() {
     },
   });
 
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const res = await apiRequest("POST", "/api/reset-password-request", { email });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "If an account exists with that email, you will receive password reset instructions.",
+      });
+      setIsResetting(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      setIsResetting(false);
+    },
+  });
+
   const onSubmit = (data: Partial<User>) => {
     updateUserMutation.mutate(data);
+  };
+
+  const handleResetPassword = () => {
+    const email = form.getValues("email");
+    if (!email) {
+      toast({
+        title: "Error",
+        description: "Please enter your email address first",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsResetting(true);
+    resetPasswordMutation.mutate(email);
   };
 
   if (isLoading) {
@@ -153,13 +190,23 @@ export default function SettingsPage() {
                     )}
                   />
 
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={updateUserMutation.isPending}
-                  >
-                    {texts.saveChanges}
-                  </Button>
+                  <div className="flex gap-4">
+                    <Button
+                      type="submit"
+                      className="flex-1"
+                      disabled={updateUserMutation.isPending}
+                    >
+                      {texts.saveChanges}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleResetPassword}
+                      disabled={isResetting}
+                    >
+                      {isResetting ? "Sending..." : "Reset Password"}
+                    </Button>
+                  </div>
                 </form>
               </Form>
             </CardContent>

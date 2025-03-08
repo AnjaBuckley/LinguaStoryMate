@@ -3,7 +3,10 @@ import { db, checkDatabaseConnection } from "./db";
 import { eq, sql } from "drizzle-orm";
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import { randomBytes, scrypt } from 'crypto';
+import { promisify } from 'util';
 
+const scryptAsync = promisify(scrypt);
 const MemoryStore = createMemoryStore(session);
 
 export interface IStorage {
@@ -22,6 +25,9 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   updateUser(id: number, data: Partial<User>): Promise<User>;
   updateUserStreak(userId: number): Promise<User>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByResetToken(token: string): Promise<User | undefined>;
+  hashPassword(password: string): Promise<string>;
 
   // Vocabulary methods
   createVocabularyItems(data: { userId: number; storyId: number; words: { sourceWord: string; targetWord: string; context?: string }[] }): Promise<VocabularyItem[]>;
@@ -186,6 +192,32 @@ export class DatabaseStorage implements IStorage {
         .where(eq(vocabularyItems.userId, userId))
         .orderBy(sql`${vocabularyItems.createdAt} DESC`);
     });
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return withRetry(async () => {
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, email));
+      return user;
+    });
+  }
+
+  async getUserByResetToken(token: string): Promise<User | undefined> {
+    return withRetry(async () => {
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.resetPasswordToken, token));
+      return user;
+    });
+  }
+
+  async hashPassword(password: string): Promise<string> {
+    const salt = randomBytes(16).toString("hex");
+    const buf = (await scryptAsync(password, salt, 64)) as Buffer;
+    return `${buf.toString("hex")}.${salt}`;
   }
 }
 

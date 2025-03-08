@@ -4,10 +4,88 @@ import { storage } from "./storage";
 import { generateStory, generateImage, generateQuiz, generateAudio } from "./lib/openai";
 import { generateStorySchema } from "@shared/schema";
 import { setupAuth } from "./auth";
+import { createTransport } from "nodemailer";
+import { randomBytes } from "crypto";
+
+// Configure nodemailer
+const transporter = createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
+  },
+});
 
 export async function registerRoutes(app: Express) {
-  // Set up authentication routes and middleware
   setupAuth(app);
+
+  // Add password reset endpoints
+  app.post("/api/reset-password-request", async (req, res) => {
+    try {
+      const { email } = req.body;
+      const user = await storage.getUserByEmail(email);
+
+      if (!user) {
+        return res.status(404).json({ error: "No account with that email address exists." });
+      }
+
+      const token = randomBytes(20).toString('hex');
+      const expires = new Date();
+      expires.setHours(expires.getHours() + 1); // Token expires in 1 hour
+
+      await storage.updateUser(user.id, {
+        resetPasswordToken: token,
+        resetPasswordExpires: expires,
+      });
+
+      const resetUrl = `${process.env.APP_URL}/reset-password/${token}`;
+
+      await transporter.sendMail({
+        to: user.email,
+        subject: "Password Reset Request",
+        html: `
+          <p>You requested a password reset for your Language Learning Adventures account.</p>
+          <p>Please click on the following link to reset your password:</p>
+          <a href="${resetUrl}">${resetUrl}</a>
+          <p>This link will expire in 1 hour.</p>
+          <p>If you did not request this, please ignore this email.</p>
+        `,
+      });
+
+      res.json({ message: "Password reset email sent" });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/reset-password/:token", async (req, res) => {
+    try {
+      const { token } = req.params;
+      const { password } = req.body;
+
+      const user = await storage.getUserByResetToken(token);
+
+      if (!user) {
+        return res.status(400).json({ error: "Password reset token is invalid or has expired." });
+      }
+
+      if (user.resetPasswordExpires && new Date() > new Date(user.resetPasswordExpires)) {
+        return res.status(400).json({ error: "Password reset token has expired." });
+      }
+
+      await storage.updateUser(user.id, {
+        password: await storage.hashPassword(password),
+        resetPasswordToken: null,
+        resetPasswordExpires: null,
+      });
+
+      res.json({ message: "Password has been reset" });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
 
   app.post("/api/stories/generate", async (req, res) => {
     try {

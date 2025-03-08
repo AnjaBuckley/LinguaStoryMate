@@ -11,6 +11,7 @@ import Quiz from "@/pages/quiz";
 import AuthPage from "@/pages/auth";
 import NotFound from "@/pages/not-found";
 import Settings from "@/pages/settings";
+import ResetPassword from "@/pages/reset-password";
 
 function Router() {
   return (
@@ -20,6 +21,7 @@ function Router() {
       <ProtectedRoute path="/quiz/:storyId" component={Quiz} />
       <ProtectedRoute path="/settings" component={Settings} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/reset-password/:token" component={ResetPassword} />
       <Route component={NotFound} />
     </Switch>
   );
