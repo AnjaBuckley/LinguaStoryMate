@@ -1,10 +1,11 @@
-import { users, stories, quizzes, vocabularyItems, type Story, type InsertStory, type Quiz, type InsertQuiz, type VocabularyItem, type InsertVocabularyItem, type User, type InsertUser, completedStories } from "@shared/schema";
+import { pgTable, text, serial, json, timestamp, integer, boolean } from "drizzle-orm/pg-core";
 import { db, checkDatabaseConnection } from "./db";
 import { eq, sql, and } from "drizzle-orm";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import { randomBytes, scrypt } from 'crypto';
 import { promisify } from 'util';
+import { users, stories, quizzes, vocabularyItems, completedStories, type Story, type InsertStory, type Quiz, type InsertQuiz, type VocabularyItem, type InsertVocabularyItem, type User, type InsertUser } from "@shared/schema";
 
 const scryptAsync = promisify(scrypt);
 const MemoryStore = createMemoryStore(session);
@@ -148,12 +149,12 @@ export class DatabaseStorage implements IStorage {
       if (!user) throw new Error("User not found");
 
       // Get total completed stories for this user
-      const completedStories = await db
+      const completedStoriesResult = await db
         .select()
         .from(completedStories)
         .where(eq(completedStories.userId, userId));
 
-      const storiesCompleted = completedStories.length;
+      const storiesCompleted = completedStoriesResult.length;
 
       const [updated] = await db
         .update(users)
@@ -165,35 +166,6 @@ export class DatabaseStorage implements IStorage {
         .returning();
 
       return updated;
-    });
-  }
-
-  async createVocabularyItems(data: { userId: number; storyId: number; words: { sourceWord: string; targetWord: string; context?: string }[] }): Promise<VocabularyItem[]> {
-    return withRetry(async () => {
-      if (!data.words || data.words.length === 0) {
-        return [];
-      }
-
-      const items = data.words.map(word => ({
-        userId: data.userId,
-        storyId: data.storyId,
-        sourceWord: word.sourceWord,
-        targetWord: word.targetWord,
-        context: word.context,
-        learned: false
-      }));
-
-      return await db.insert(vocabularyItems).values(items).returning();
-    });
-  }
-
-  async getVocabularyItems(userId: number): Promise<VocabularyItem[]> {
-    return withRetry(async () => {
-      return await db
-        .select()
-        .from(vocabularyItems)
-        .where(eq(vocabularyItems.userId, userId))
-        .orderBy(sql`${vocabularyItems.createdAt} DESC`);
     });
   }
 
@@ -237,6 +209,35 @@ export class DatabaseStorage implements IStorage {
         .from(completedStories)
         .where(eq(completedStories.userId, userId))
         .orderBy(sql`${completedStories.completedAt} DESC`);
+    });
+  }
+
+  async createVocabularyItems(data: { userId: number; storyId: number; words: { sourceWord: string; targetWord: string; context?: string }[] }): Promise<VocabularyItem[]> {
+    return withRetry(async () => {
+      if (!data.words || data.words.length === 0) {
+        return [];
+      }
+
+      const items = data.words.map(word => ({
+        userId: data.userId,
+        storyId: data.storyId,
+        sourceWord: word.sourceWord,
+        targetWord: word.targetWord,
+        context: word.context,
+        learned: false
+      }));
+
+      return await db.insert(vocabularyItems).values(items).returning();
+    });
+  }
+
+  async getVocabularyItems(userId: number): Promise<VocabularyItem[]> {
+    return withRetry(async () => {
+      return await db
+        .select()
+        .from(vocabularyItems)
+        .where(eq(vocabularyItems.userId, userId))
+        .orderBy(sql`${vocabularyItems.createdAt} DESC`);
     });
   }
 }
