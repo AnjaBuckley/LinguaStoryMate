@@ -24,7 +24,8 @@ import { insertLearningPreferencesSchema, type LearningPreferences } from "@shar
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import LearningBuddy from "@/components/learning-buddy";
-import { Goal, Flame } from "lucide-react";
+import { Goal, Flame, Home } from "lucide-react";
+import { Link } from "wouter";
 
 const LANGUAGES = {
   "English": {
@@ -38,7 +39,8 @@ const LANGUAGES = {
     save: "Save Preferences",
     streak: "Daily Streak",
     days: "days in a row",
-    profile: "Your Learning Profile"
+    profile: "Your Learning Profile",
+    home: "Back to Home"
   },
   "Deutsch": {
     welcome: "Lass uns deine Lernreise personalisieren! 📚",
@@ -51,7 +53,8 @@ const LANGUAGES = {
     save: "Einstellungen speichern",
     streak: "Tägliche Serie",
     days: "Tage in Folge",
-    profile: "Dein Lernprofil"
+    profile: "Dein Lernprofil",
+    home: "Zurück zur Startseite"
   },
   "Français": {
     welcome: "Personnalisons votre parcours d'apprentissage ! 📚",
@@ -64,7 +67,8 @@ const LANGUAGES = {
     save: "Enregistrer les préférences",
     streak: "Série quotidienne",
     days: "jours consécutifs",
-    profile: "Votre profil d'apprentissage"
+    profile: "Votre profil d'apprentissage",
+    home: "Retour à l'accueil"
   },
   "Español": {
     welcome: "¡Personalicemos tu viaje de aprendizaje! 📚",
@@ -77,7 +81,8 @@ const LANGUAGES = {
     save: "Guardar preferencias",
     streak: "Racha diaria",
     days: "días consecutivos",
-    profile: "Tu perfil de aprendizaje"
+    profile: "Tu perfil de aprendizaje",
+    home: "Volver al inicio"
   },
   "Italiano": {
     welcome: "Personalizziamo il tuo percorso di apprendimento! 📚",
@@ -90,7 +95,8 @@ const LANGUAGES = {
     save: "Salva preferenze",
     streak: "Serie giornaliera",
     days: "giorni consecutivi",
-    profile: "Il tuo profilo di apprendimento"
+    profile: "Il tuo profilo di apprendimento",
+    home: "Torna alla home"
   }
 };
 
@@ -156,7 +162,15 @@ export default function LearningPreferencesPage() {
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-primary mb-8">{texts.preferences}</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-4xl font-bold text-primary">{texts.preferences}</h1>
+          <Button asChild variant="outline">
+            <Link href="/">
+              <Home className="mr-2 h-4 w-4" />
+              {texts.home}
+            </Link>
+          </Button>
+        </div>
 
         <div className="grid gap-8">
           <Card>

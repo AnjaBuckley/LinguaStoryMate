@@ -5,8 +5,10 @@ import { Story } from "@shared/schema";
 import { Link } from "wouter";
 import { ImageOff, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useInterfaceLanguage } from "@/hooks/use-interface-language";
 
 export default function Home() {
+  const { texts } = useInterfaceLanguage();
   const { data: stories, isLoading } = useQuery<Story[]>({
     queryKey: ["/api/stories"],
   });
@@ -16,19 +18,19 @@ export default function Home() {
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-bold text-primary">
-            Language Learning Adventures
+            {texts.title}
           </h1>
           <Button asChild variant="outline">
             <Link href="/learning-preferences">
               <Settings className="mr-2 h-4 w-4" />
-              Learning Preferences
+              {texts.settings}
             </Link>
           </Button>
         </div>
 
         <StoryGenerator />
 
-        <h2 className="text-2xl font-semibold mt-12 mb-6">Your Stories</h2>
+        <h2 className="text-2xl font-semibold mt-12 mb-6">{texts.stories}</h2>
 
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
