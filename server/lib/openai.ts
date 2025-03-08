@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { GenerateStoryRequest, QuizQuestion } from "@shared/schema";
+import fetch from "node-fetch";
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error("OPENAI_API_KEY environment variable is required");
@@ -35,7 +36,7 @@ Make the story fun and engaging for children!`;
   return JSON.parse(response.choices[0].message.content || "{}");
 }
 
-export async function generateImage(prompt: string) {
+export async function generateImage(prompt: string): Promise<string> {
   const response = await openai.images.generate({
     model: "dall-e-3",
     prompt: `Create a kid-friendly illustration for a children's story about: ${prompt}`,
@@ -44,7 +45,13 @@ export async function generateImage(prompt: string) {
     quality: "standard",
   });
 
-  return response.data[0].url;
+  // Download the image and convert to base64
+  const imageUrl = response.data[0].url;
+  const imageResponse = await fetch(imageUrl);
+  const buffer = await imageResponse.arrayBuffer();
+  const base64Image = Buffer.from(buffer).toString('base64');
+
+  return `data:image/png;base64,${base64Image}`;
 }
 
 export async function generateAudio(text: string, voice = "alloy"): Promise<string> {
