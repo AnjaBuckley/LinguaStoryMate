@@ -21,12 +21,43 @@ export const quizzes = pgTable("quizzes", {
   questions: json("questions").notNull().$type<QuizQuestion[]>(),
 });
 
+// New tables for vocabulary games
+export const vocabularyItems = pgTable("vocabulary_items", {
+  id: serial("id").primaryKey(),
+  storyId: integer("story_id").references(() => stories.id),
+  sourceWord: text("source_word").notNull(),
+  targetWord: text("target_word").notNull(),
+  context: text("context"),
+  difficulty: text("difficulty").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const games = pgTable("games", {
+  id: serial("id").primaryKey(),
+  storyId: integer("story_id").references(() => stories.id),
+  type: text("type").notNull(), // 'matching', 'flashcard', 'fill-blank'
+  content: json("content").notNull().$type<GameContent>(),
+  difficulty: text("difficulty").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Types
 export type QuizQuestion = {
   question: string;
   options: string[];
   correctAnswer: string;
 };
 
+export type GameContent = {
+  words: Array<{
+    sourceWord: string;
+    targetWord: string;
+    context?: string;
+  }>;
+  hints?: string[];
+};
+
+// Schemas
 export const insertStorySchema = createInsertSchema(stories).omit({
   id: true,
   createdAt: true,
@@ -36,10 +67,25 @@ export const insertQuizSchema = createInsertSchema(quizzes).omit({
   id: true,
 });
 
+export const insertVocabularyItemSchema = createInsertSchema(vocabularyItems).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertGameSchema = createInsertSchema(games).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types for frontend
 export type Story = typeof stories.$inferSelect;
 export type InsertStory = z.infer<typeof insertStorySchema>;
 export type Quiz = typeof quizzes.$inferSelect;
 export type InsertQuiz = z.infer<typeof insertQuizSchema>;
+export type VocabularyItem = typeof vocabularyItems.$inferSelect;
+export type InsertVocabularyItem = z.infer<typeof insertVocabularyItemSchema>;
+export type Game = typeof games.$inferSelect;
+export type InsertGame = z.infer<typeof insertGameSchema>;
 
 export const generateStorySchema = z.object({
   sourceLanguage: z.string(),

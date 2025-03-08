@@ -1,4 +1,4 @@
-import { stories, quizzes, type Story, type InsertStory, type Quiz, type InsertQuiz } from "@shared/schema";
+import { stories, quizzes, vocabularyItems, games, type Story, type InsertStory, type Quiz, type InsertQuiz, type VocabularyItem, type InsertVocabularyItem, type Game, type InsertGame } from "@shared/schema";
 import { db, checkDatabaseConnection } from "./db";
 import { eq } from "drizzle-orm";
 
@@ -8,6 +8,10 @@ export interface IStorage {
   listStories(): Promise<Story[]>;
   createQuiz(quiz: InsertQuiz): Promise<Quiz>;
   getQuiz(storyId: number): Promise<Quiz | undefined>;
+  createVocabularyItem(item: InsertVocabularyItem): Promise<VocabularyItem>;
+  getVocabularyItems(storyId: number): Promise<VocabularyItem[]>;
+  createGame(game: InsertGame): Promise<Game>;
+  getGames(storyId: number): Promise<Game[]>;
 }
 
 const MAX_RETRIES = 3;
@@ -64,6 +68,38 @@ export class DatabaseStorage implements IStorage {
         .from(quizzes)
         .where(eq(quizzes.storyId, storyId));
       return quiz;
+    });
+  }
+
+  async createVocabularyItem(item: InsertVocabularyItem): Promise<VocabularyItem> {
+    return withRetry(async () => {
+      const [newItem] = await db.insert(vocabularyItems).values(item).returning();
+      return newItem;
+    });
+  }
+
+  async getVocabularyItems(storyId: number): Promise<VocabularyItem[]> {
+    return withRetry(async () => {
+      return await db
+        .select()
+        .from(vocabularyItems)
+        .where(eq(vocabularyItems.storyId, storyId));
+    });
+  }
+
+  async createGame(game: InsertGame): Promise<Game> {
+    return withRetry(async () => {
+      const [newGame] = await db.insert(games).values(game).returning();
+      return newGame;
+    });
+  }
+
+  async getGames(storyId: number): Promise<Game[]> {
+    return withRetry(async () => {
+      return await db
+        .select()
+        .from(games)
+        .where(eq(games.storyId, storyId));
     });
   }
 }

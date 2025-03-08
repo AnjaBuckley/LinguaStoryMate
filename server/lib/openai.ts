@@ -82,3 +82,30 @@ Please respond with a JSON object in this exact format:
   const result = JSON.parse(response.choices[0].message.content || "{}");
   return result.questions;
 }
+
+// Add this function to extract vocabulary from story content
+export async function extractVocabulary(content: string, sourceLanguage: string, targetLanguage: string): Promise<Array<{ sourceWord: string; targetWord: string; context: string }>> {
+  const prompt = `Extract 10 important vocabulary words from this ${sourceLanguage} text and provide their ${targetLanguage} translations. Include the context where each word appears.
+
+Text: ${content}
+
+Please respond with a JSON object in this exact format:
+{
+  "vocabulary": [
+    {
+      "sourceWord": "word in ${sourceLanguage}",
+      "targetWord": "translation in ${targetLanguage}",
+      "context": "sentence or phrase where the word appears"
+    }
+  ]
+}`;
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [{ role: "user", content: prompt }],
+    response_format: { type: "json_object" },
+  });
+
+  const result = JSON.parse(response.choices[0].message.content || "{}");
+  return result.vocabulary || [];
+}

@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { generateStory, generateImage, generateQuiz, generateAudio } from "./lib/openai";
+import { generateStory, generateImage, generateQuiz, generateAudio, extractVocabulary } from "./lib/openai";
 import { generateStorySchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express) {
@@ -14,6 +14,13 @@ export async function registerRoutes(app: Express) {
       const audioUrl = await generateAudio(storyData.content);
       const questions = await generateQuiz(storyData.content);
 
+      // Extract vocabulary
+      const vocabulary = await extractVocabulary(
+        storyData.content,
+        params.sourceLanguage,
+        params.targetLanguage
+      );
+
       const story = await storage.createStory({
         ...storyData,
         imageUrl,
@@ -23,12 +30,39 @@ export async function registerRoutes(app: Express) {
         difficulty: params.difficulty,
       });
 
+      // Create vocabulary items
+      await Promise.all(
+        vocabulary.map((item) =>
+          storage.createVocabularyItem({
+            storyId: story.id,
+            sourceWord: item.sourceWord,
+            targetWord: item.targetWord,
+            context: item.context,
+            difficulty: params.difficulty,
+          })
+        )
+      );
+
       const quiz = await storage.createQuiz({
         storyId: story.id,
         questions,
       });
 
-      res.json({ story, quiz });
+      // Create matching game
+      const game = await storage.createGame({
+        storyId: story.id,
+        type: "matching",
+        content: {
+          words: vocabulary.map(({ sourceWord, targetWord, context }) => ({
+            sourceWord,
+            targetWord,
+            context,
+          })),
+        },
+        difficulty: params.difficulty,
+      });
+
+      res.json({ story, quiz, game });
     } catch (error) {
       res.status(400).json({ error: error.message });
     }
@@ -55,6 +89,25 @@ export async function registerRoutes(app: Express) {
       return;
     }
     res.json(quiz);
+  });
+
+  // Add these routes for vocabulary games
+  app.get("/api/vocabulary/:storyId", async (req, res) => {
+    try {
+      const items = await storage.getVocabularyItems(Number(req.params.storyId));
+      res.json(items);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/games/:storyId", async (req, res) => {
+    try {
+      const games = await storage.getGames(Number(req.params.storyId));
+      res.json(games);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
   });
 
   const httpServer = createServer(app);
