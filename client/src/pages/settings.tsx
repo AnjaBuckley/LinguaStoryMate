@@ -14,9 +14,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { type User, insertUserSchema } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useInterfaceLanguage } from "@/hooks/use-interface-language";
-import { Home, Flame } from "lucide-react";
+import { Home, Flame, User as UserIcon } from "lucide-react";
 import { Link } from "wouter";
 import LanguageToggle from "@/components/language-toggle";
 
@@ -46,12 +46,13 @@ export default function SettingsPage() {
       return res.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
         title: "Success",
-        description: "Settings updated successfully",
+        description: "Your settings have been updated",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message,
@@ -79,13 +80,13 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold text-primary">{texts.settings}</h1>
+          <h1 className="text-4xl font-bold text-primary">User Settings</h1>
           <div className="flex gap-4 items-center">
             <LanguageToggle />
             <Button asChild variant="outline">
               <Link href="/">
                 <Home className="mr-2 h-4 w-4" />
-                {texts.home}
+                Back to Home
               </Link>
             </Button>
           </div>
@@ -94,48 +95,55 @@ export default function SettingsPage() {
         <div className="grid gap-8">
           <Card>
             <CardHeader>
-              <CardTitle>{texts.profile}</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <UserIcon className="h-6 w-6" />
+                Profile Settings
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Username</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Username</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input type="email" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
                   <FormField
                     control={form.control}
                     name="dailyGoalMinutes"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{texts.goal}</FormLabel>
+                        <FormLabel>Daily Learning Goal (minutes)</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
+                            min={5}
+                            max={240}
                             {...field}
                             onChange={(e) => field.onChange(Number(e.target.value))}
                           />
@@ -150,7 +158,7 @@ export default function SettingsPage() {
                     className="w-full"
                     disabled={updateUserMutation.isPending}
                   >
-                    {texts.save}
+                    Save Changes
                   </Button>
                 </form>
               </Form>
@@ -161,16 +169,16 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Flame className="h-6 w-6 text-orange-500" />
-                {texts.streak}
+                Learning Streak
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-4">
-                <div className="text-4xl font-bold text-orange-500">
+                <div className="text-5xl font-bold text-orange-500">
                   {user?.currentStreak || 0}
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {texts.days}
+                <div className="text-lg text-muted-foreground">
+                  days in a row
                 </div>
               </div>
             </CardContent>
