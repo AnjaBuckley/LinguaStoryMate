@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,12 +7,42 @@ import AudioPlayer from "@/components/audio-player";
 import { Book, Brain } from "lucide-react";
 import { exportStoryToPDF } from "@/lib/pdf";
 import { useToast } from "@/hooks/use-toast";
+import { useLearningCelebration } from "@/hooks/use-learning-celebration";
+import ConfettiBurst from "@/components/confetti-burst";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function StoryView() {
   const { id } = useParams();
   const { toast } = useToast();
+  const { showConfetti, celebrateProgress } = useLearningCelebration();
+
   const { data: story, isLoading } = useQuery<Story>({
     queryKey: [`/api/stories/${id}`],
+  });
+
+  const completeStoryMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/stories/${id}/complete`, {
+        timeSpent: 0, // You might want to track actual time spent
+        quizScore: null,
+      });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      celebrateProgress();
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      toast({
+        title: "Success",
+        description: "Story completed! Keep up the great work!",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const handleExportPDF = async () => {
@@ -50,6 +80,7 @@ export default function StoryView() {
 
   return (
     <div className="min-h-screen bg-background p-8">
+      {showConfetti && <ConfettiBurst />}
       <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl font-bold text-primary mb-8">{story.title}</h1>
 
@@ -96,6 +127,14 @@ export default function StoryView() {
           <Button variant="outline" className="flex-1" onClick={handleExportPDF}>
             <Book className="mr-2 h-4 w-4" />
             Export PDF
+          </Button>
+          <Button 
+            variant="default" 
+            className="flex-1" 
+            onClick={() => completeStoryMutation.mutate()}
+            disabled={completeStoryMutation.isPending}
+          >
+            {completeStoryMutation.isPending ? "Completing..." : "Complete Story"}
           </Button>
         </div>
       </div>
