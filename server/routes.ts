@@ -216,6 +216,69 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // New routes added here
+  app.get("/api/parent/children", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const relations = await storage.getParentChildren(req.user.id);
+      const children = await Promise.all(
+        relations.map(async (relation) => {
+          const child = await storage.getUser(relation.childId);
+          const analytics = await storage.getLatestAnalytics(relation.childId);
+          return {
+            ...child,
+            analytics,
+            relationshipType: relation.relationshipType,
+          };
+        })
+      );
+      res.json(children);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/parent/children", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { childUsername, relationshipType } = req.body;
+      const child = await storage.getUserByUsername(childUsername);
+
+      if (!child) {
+        return res.status(404).json({ error: "Child user not found" });
+      }
+
+      const relation = await storage.createParentChildRelation({
+        parentId: req.user.id,
+        childId: child.id,
+        relationshipType,
+      });
+
+      res.json(relation);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/analytics/:userId", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const analytics = await storage.getAnalytics(Number(req.params.userId));
+      res.json(analytics);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

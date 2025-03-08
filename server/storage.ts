@@ -1,4 +1,4 @@
-import { users, stories, quizzes, vocabularyItems, games, learningProgress, learningPreferences, recommendations, type Story, type InsertStory, type Quiz, type InsertQuiz, type VocabularyItem, type InsertVocabularyItem, type Game, type InsertGame, type User, type InsertUser, type LearningProgress, type InsertLearningProgress, type LearningPreferences, type InsertLearningPreferences, type Recommendation, type InsertRecommendation } from "@shared/schema";
+import { users, stories, quizzes, vocabularyItems, games, learningProgress, learningPreferences, recommendations, type Story, type InsertStory, type Quiz, type InsertQuiz, type VocabularyItem, type InsertVocabularyItem, type Game, type InsertGame, type User, type InsertUser, type LearningProgress, type InsertLearningProgress, type LearningPreferences, type InsertLearningPreferences, type Recommendation, type InsertRecommendation, type ParentChildRelation, type InsertParentChildRelation, type LearningAnalytics, type InsertLearningAnalytics } from "@shared/schema";
 import { db, checkDatabaseConnection } from "./db";
 import { eq, sql, and, desc } from "drizzle-orm";
 import session from "express-session";
@@ -40,6 +40,15 @@ export interface IStorage {
   createRecommendation(recommendation: InsertRecommendation): Promise<Recommendation>;
   getRecommendations(userId: number): Promise<Recommendation[]>;
   markRecommendationViewed(id: number): Promise<void>;
+
+  // Parent-child relationship methods
+  createParentChildRelation(relation: InsertParentChildRelation): Promise<ParentChildRelation>;
+  getParentChildren(parentId: number): Promise<ParentChildRelation[]>;
+
+  // Analytics methods
+  createAnalytics(analytics: InsertLearningAnalytics): Promise<LearningAnalytics>;
+  getAnalytics(userId: number): Promise<LearningAnalytics[]>;
+  getLatestAnalytics(userId: number): Promise<LearningAnalytics | undefined>;
 }
 
 const MAX_RETRIES = 3;
@@ -249,6 +258,51 @@ export class DatabaseStorage implements IStorage {
         .update(recommendations)
         .set({ viewed: true })
         .where(eq(recommendations.id, id));
+    });
+  }
+
+  async createParentChildRelation(relation: InsertParentChildRelation): Promise<ParentChildRelation> {
+    return withRetry(async () => {
+      const [newRelation] = await db.insert(parentChildRelations).values(relation).returning();
+      return newRelation;
+    });
+  }
+
+  async getParentChildren(parentId: number): Promise<ParentChildRelation[]> {
+    return withRetry(async () => {
+      return await db
+        .select()
+        .from(parentChildRelations)
+        .where(eq(parentChildRelations.parentId, parentId));
+    });
+  }
+
+  async createAnalytics(analytics: InsertLearningAnalytics): Promise<LearningAnalytics> {
+    return withRetry(async () => {
+      const [newAnalytics] = await db.insert(learningAnalytics).values(analytics).returning();
+      return newAnalytics;
+    });
+  }
+
+  async getAnalytics(userId: number): Promise<LearningAnalytics[]> {
+    return withRetry(async () => {
+      return await db
+        .select()
+        .from(learningAnalytics)
+        .where(eq(learningAnalytics.userId, userId))
+        .orderBy(desc(learningAnalytics.startDate));
+    });
+  }
+
+  async getLatestAnalytics(userId: number): Promise<LearningAnalytics | undefined> {
+    return withRetry(async () => {
+      const [latest] = await db
+        .select()
+        .from(learningAnalytics)
+        .where(eq(learningAnalytics.userId, userId))
+        .orderBy(desc(learningAnalytics.createdAt))
+        .limit(1);
+      return latest;
     });
   }
 }
