@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { Quiz } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import LearningBuddy from "@/components/learning-buddy";
 
 export default function QuizPage() {
   const { storyId } = useParams();
@@ -105,6 +106,13 @@ export default function QuizPage() {
               </Button>
             </CardContent>
           </Card>
+        )}
+        {showResults && (
+          <LearningBuddy
+            currentScore={getScore()}
+            totalQuestions={quiz.questions.length}
+            showCelebration={getScore() === quiz.questions.length}
+          />
         )}
       </div>
     </div>

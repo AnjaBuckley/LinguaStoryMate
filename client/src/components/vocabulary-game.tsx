@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Game, VocabularyItem } from "@shared/schema";
 import { Gamepad2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import LearningBuddy from "./learning-buddy";
 
 interface VocabularyGameProps {
   storyId: number;
@@ -153,6 +154,11 @@ export default function VocabularyGame({ storyId, sourceLanguage, targetLanguage
                 ))}
             </div>
           </div>
+        )}
+        {isGameComplete && (
+          <LearningBuddy
+            showCelebration={true}
+          />
         )}
       </CardContent>
     </Card>
