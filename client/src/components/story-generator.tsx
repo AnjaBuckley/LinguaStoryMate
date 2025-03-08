@@ -27,6 +27,15 @@ import { useToast } from "@/hooks/use-toast";
 import { useInterfaceLanguage } from "@/hooks/use-interface-language";
 import LearningBuddy from "./learning-buddy";
 
+const LANGUAGE_MAPPING = {
+  // Display name to API value mapping
+  "English": "English",
+  "Deutsch": "German",
+  "Français": "French",
+  "Español": "Spanish",
+  "Italiano": "Italian"
+};
+
 const AVAILABLE_LANGUAGES = [
   "English",
   "Deutsch",
@@ -54,7 +63,11 @@ export default function StoryGenerator() {
 
   const generateMutation = useMutation({
     mutationFn: async (data: GenerateStoryRequest) => {
-      const res = await apiRequest("POST", "/api/stories/generate", data);
+      const res = await apiRequest("POST", "/api/stories/generate", {
+        ...data,
+        sourceLanguage: LANGUAGE_MAPPING[data.sourceLanguage as keyof typeof LANGUAGE_MAPPING],
+        targetLanguage: LANGUAGE_MAPPING[data.targetLanguage as keyof typeof LANGUAGE_MAPPING],
+      });
       return res.json();
     },
     onSuccess: (data) => {
