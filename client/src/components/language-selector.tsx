@@ -16,6 +16,9 @@ const LANGUAGES = [
   "Chinese",
   "Japanese",
   "Korean",
+  "Turkish",
+  "Swedish",
+  "Russian",
 ];
 
 interface LanguageSelectorProps {
