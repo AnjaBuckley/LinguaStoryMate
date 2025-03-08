@@ -40,6 +40,7 @@ export interface IStorage {
   createRecommendation(recommendation: InsertRecommendation): Promise<Recommendation>;
   getRecommendations(userId: number): Promise<Recommendation[]>;
   markRecommendationViewed(id: number): Promise<void>;
+  deleteUserRecommendations(userId: number): Promise<void>;
 }
 
 const MAX_RETRIES = 3;
@@ -65,7 +66,6 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    // Use MemoryStore for development to avoid session store setup issues
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // prune expired entries every 24h
     });
@@ -73,12 +73,7 @@ export class DatabaseStorage implements IStorage {
 
   async createStory(story: InsertStory): Promise<Story> {
     return withRetry(async () => {
-      // Create the new story
       const [newStory] = await db.insert(stories).values(story).returning();
-
-      // Clean up old stories
-      await db.execute(sql`SELECT delete_old_stories()`);
-
       return newStory;
     });
   }
@@ -102,7 +97,7 @@ export class DatabaseStorage implements IStorage {
 
   async createQuiz(quiz: InsertQuiz): Promise<Quiz> {
     return withRetry(async () => {
-      const [newQuiz] = await db.insert(quizzes).values([quiz]).returning();
+      const [newQuiz] = await db.insert(quizzes).values(quiz).returning();
       return newQuiz;
     });
   }
@@ -135,7 +130,7 @@ export class DatabaseStorage implements IStorage {
 
   async createGame(game: InsertGame): Promise<Game> {
     return withRetry(async () => {
-      const [newGame] = await db.insert(games).values([game]).returning();
+      const [newGame] = await db.insert(games).values(game).returning();
       return newGame;
     });
   }
@@ -266,6 +261,14 @@ export class DatabaseStorage implements IStorage {
         .update(recommendations)
         .set({ viewed: true })
         .where(eq(recommendations.id, id));
+    });
+  }
+
+  async deleteUserRecommendations(userId: number): Promise<void> {
+    return withRetry(async () => {
+      await db
+        .delete(recommendations)
+        .where(eq(recommendations.userId, userId));
     });
   }
 }

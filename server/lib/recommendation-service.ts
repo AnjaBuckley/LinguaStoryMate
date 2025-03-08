@@ -10,20 +10,20 @@ export class RecommendationService {
   private async calculateUserLevel(userId: number, language: string): Promise<string> {
     const stories = await storage.listStories();
     const userStories = stories.filter(story => story.userId === userId);
-    
+
     let totalScore = 0;
     let completedStories = 0;
-    
+
     for (const story of userStories) {
       const progress = await storage.getLearningProgress(userId, story.id);
       if (progress?.completed) {
-        totalScore += (progress.quizScore || 0) + (progress.vocabularyScore || 0);
+        totalScore += (progress.quizScore || 0);
         completedStories++;
       }
     }
-    
-    const averageScore = completedStories > 0 ? totalScore / (completedStories * 2) : 0;
-    
+
+    const averageScore = completedStories > 0 ? totalScore / completedStories : 0;
+
     if (averageScore >= 80) return "advanced";
     if (averageScore >= 60) return "intermediate";
     return "beginner";
@@ -31,7 +31,7 @@ export class RecommendationService {
 
   private async findSimilarStories(story: Story, preferences: LearningPreferences): Promise<Story[]> {
     const allStories = await storage.listStories();
-    
+
     return allStories.filter(s => 
       s.id !== story.id &&
       (s.sourceLanguage === story.sourceLanguage || s.targetLanguage === story.targetLanguage) &&
@@ -61,6 +61,9 @@ export class RecommendationService {
   }
 
   public async generateRecommendations(userId: number): Promise<void> {
+    // First, clean up old recommendations for this user
+    await storage.deleteUserRecommendations(userId);
+
     const preferences = await storage.getLearningPreferences(userId);
     if (!preferences) return;
 
@@ -81,7 +84,7 @@ export class RecommendationService {
 
       const userLevel = languageLevels.get(story.sourceLanguage) || "beginner";
       const priority = this.calculatePriority(story, userLevel, preferences);
-      
+
       let reason = "Matches your learning preferences";
       if (story.difficulty === userLevel) {
         reason = "Perfect match for your current level";
