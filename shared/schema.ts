@@ -5,7 +5,7 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
-  email: text("email").unique(),
+  email: text("email"),
   password: text("password").notNull(),
   interfaceLanguage: text("interface_language").default("en"),
   dailyGoalMinutes: integer("daily_goal_minutes").default(30),
@@ -59,9 +59,12 @@ export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
   currentStreak: true,
   lastActivityDate: true,
+  interfaceLanguage: true,
+  dailyGoalMinutes: true,
 }).extend({
   password: z.string().min(6, "Password must be at least 6 characters"),
   username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Invalid email address").optional(),
 });
 
 export const insertStorySchema = createInsertSchema(stories).omit({
