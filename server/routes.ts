@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { generateStory, generateImage, generateQuiz, generateAudio, extractVocabulary } from "./lib/openai";
 import { generateStorySchema } from "@shared/schema";
 import { setupAuth } from "./auth";
+import { recommendationService } from "./lib/recommendation-service";
 
 export async function registerRoutes(app: Express) {
   // Set up authentication routes and middleware
@@ -79,7 +80,7 @@ export async function registerRoutes(app: Express) {
       return res.status(401).json({ error: "Not authenticated" });
     }
     const stories = await storage.listStories();
-    res.json(stories.filter(story => story.userId === req.user.id));
+    res.json(stories.filter((story) => story.userId === req.user.id));
   });
 
   app.get("/api/stories/:id", async (req, res) => {
@@ -113,6 +114,103 @@ export async function registerRoutes(app: Express) {
     try {
       const games = await storage.getGames(Number(req.params.storyId));
       res.json(games);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Add to existing routes...
+  app.post("/api/learning-preferences", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const userId = req.user.id;
+      const existingPreferences = await storage.getLearningPreferences(userId);
+
+      let preferences;
+      if (existingPreferences) {
+        preferences = await storage.updateLearningPreferences(userId, req.body);
+      } else {
+        preferences = await storage.createLearningPreferences({
+          ...req.body,
+          userId,
+        });
+      }
+
+      // Generate new recommendations based on updated preferences
+      await recommendationService.generateRecommendations(userId);
+
+      res.json(preferences);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/learning-preferences", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const preferences = await storage.getLearningPreferences(req.user.id);
+      res.json(preferences);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/recommendations", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const recommendations = await storage.getRecommendations(req.user.id);
+      res.json(recommendations);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/recommendations/:id/viewed", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      await storage.markRecommendationViewed(Number(req.params.id));
+      res.sendStatus(200);
+    } catch (error) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Update the story completion endpoint to track progress and generate recommendations
+  app.post("/api/stories/:id/complete", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const storyId = Number(req.params.id);
+      const userId = req.user.id;
+      const { quizScore, vocabularyScore, timeSpent } = req.body;
+
+      const progress = await storage.createLearningProgress({
+        userId,
+        storyId,
+        quizScore,
+        vocabularyScore,
+        timeSpent,
+        completed: true,
+      });
+
+      // Generate new recommendations based on completed story
+      await recommendationService.generateRecommendations(userId);
+
+      res.json(progress);
     } catch (error) {
       res.status(400).json({ error: error.message });
     }

@@ -1,6 +1,6 @@
-import { users, stories, quizzes, vocabularyItems, games, type Story, type InsertStory, type Quiz, type InsertQuiz, type VocabularyItem, type InsertVocabularyItem, type Game, type InsertGame, type User, type InsertUser } from "@shared/schema";
+import { users, stories, quizzes, vocabularyItems, games, type Story, type InsertStory, type Quiz, type InsertQuiz, type VocabularyItem, type InsertVocabularyItem, type Game, type InsertGame, type User, type InsertUser, type LearningProgress, type InsertLearningProgress, type LearningPreferences, type InsertLearningPreferences, type Recommendation, type InsertRecommendation } from "@shared/schema";
 import { db, checkDatabaseConnection } from "./db";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and, desc } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import createMemoryStore from "memorystore";
@@ -25,6 +25,21 @@ export interface IStorage {
 
   // Session store
   sessionStore: session.Store;
+
+  // Learning progress methods
+  createLearningProgress(progress: InsertLearningProgress): Promise<LearningProgress>;
+  getLearningProgress(userId: number, storyId: number): Promise<LearningProgress | undefined>;
+  updateLearningProgress(id: number, progress: Partial<InsertLearningProgress>): Promise<LearningProgress>;
+
+  // Learning preferences methods
+  createLearningPreferences(preferences: InsertLearningPreferences): Promise<LearningPreferences>;
+  getLearningPreferences(userId: number): Promise<LearningPreferences | undefined>;
+  updateLearningPreferences(userId: number, preferences: Partial<InsertLearningPreferences>): Promise<LearningPreferences>;
+
+  // Recommendation methods
+  createRecommendation(recommendation: InsertRecommendation): Promise<Recommendation>;
+  getRecommendations(userId: number): Promise<Recommendation[]>;
+  markRecommendationViewed(id: number): Promise<void>;
 }
 
 const MAX_RETRIES = 3;
@@ -152,6 +167,88 @@ export class DatabaseStorage implements IStorage {
     return withRetry(async () => {
       const [user] = await db.select().from(users).where(eq(users.username, username));
       return user;
+    });
+  }
+
+  async createLearningProgress(progress: InsertLearningProgress): Promise<LearningProgress> {
+    return withRetry(async () => {
+      const [newProgress] = await db.insert(learningProgress).values(progress).returning();
+      return newProgress;
+    });
+  }
+
+  async getLearningProgress(userId: number, storyId: number): Promise<LearningProgress | undefined> {
+    return withRetry(async () => {
+      const [progress] = await db
+        .select()
+        .from(learningProgress)
+        .where(and(eq(learningProgress.userId, userId), eq(learningProgress.storyId, storyId)));
+      return progress;
+    });
+  }
+
+  async updateLearningProgress(id: number, progress: Partial<InsertLearningProgress>): Promise<LearningProgress> {
+    return withRetry(async () => {
+      const [updated] = await db
+        .update(learningProgress)
+        .set(progress)
+        .where(eq(learningProgress.id, id))
+        .returning();
+      return updated;
+    });
+  }
+
+  async createLearningPreferences(preferences: InsertLearningPreferences): Promise<LearningPreferences> {
+    return withRetry(async () => {
+      const [newPreferences] = await db.insert(learningPreferences).values(preferences).returning();
+      return newPreferences;
+    });
+  }
+
+  async getLearningPreferences(userId: number): Promise<LearningPreferences | undefined> {
+    return withRetry(async () => {
+      const [preferences] = await db
+        .select()
+        .from(learningPreferences)
+        .where(eq(learningPreferences.userId, userId));
+      return preferences;
+    });
+  }
+
+  async updateLearningPreferences(userId: number, preferences: Partial<InsertLearningPreferences>): Promise<LearningPreferences> {
+    return withRetry(async () => {
+      const [updated] = await db
+        .update(learningPreferences)
+        .set({ ...preferences, updatedAt: new Date() })
+        .where(eq(learningPreferences.userId, userId))
+        .returning();
+      return updated;
+    });
+  }
+
+  async createRecommendation(recommendation: InsertRecommendation): Promise<Recommendation> {
+    return withRetry(async () => {
+      const [newRecommendation] = await db.insert(recommendations).values(recommendation).returning();
+      return newRecommendation;
+    });
+  }
+
+  async getRecommendations(userId: number): Promise<Recommendation[]> {
+    return withRetry(async () => {
+      return await db
+        .select()
+        .from(recommendations)
+        .where(eq(recommendations.userId, userId))
+        .orderBy(desc(recommendations.priority));
+    });
+  }
+
+  async markRecommendationViewed(id: number): Promise<void> {
+    return withRetry(async () => {
+      await db
+        .update(recommendations)
+        .set({ viewed: true })
+        .where(eq(recommendations.id, id));
     });
   }
 }

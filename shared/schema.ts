@@ -1,4 +1,4 @@
-import { pgTable, text, serial, json, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, json, timestamp, integer, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -49,6 +49,41 @@ export const games = pgTable("games", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// New table for tracking learning progress
+export const learningProgress = pgTable("learning_progress", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  storyId: integer("story_id").references(() => stories.id),
+  quizScore: integer("quiz_score"),
+  vocabularyScore: integer("vocabulary_score"),
+  timeSpent: integer("time_spent"), // in seconds
+  completed: boolean("completed").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Table for learning preferences
+export const learningPreferences = pgTable("learning_preferences", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  preferredLanguages: json("preferred_languages").notNull().$type<string[]>(),
+  preferredTopics: json("preferred_topics").notNull().$type<string[]>(),
+  preferredDifficulty: text("preferred_difficulty").notNull(),
+  learningGoals: json("learning_goals").notNull().$type<string[]>(),
+  dailyGoalMinutes: integer("daily_goal_minutes").default(30),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Table for recommendations
+export const recommendations = pgTable("recommendations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  storyId: integer("story_id").references(() => stories.id),
+  reason: text("reason").notNull(),
+  priority: integer("priority").notNull(), // 1-5, higher is more recommended
+  viewed: boolean("viewed").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Types
 export type QuizQuestion = {
   question: string;
@@ -93,6 +128,23 @@ export const insertUserSchema = createInsertSchema(users).omit({
   username: z.string().min(3, "Username must be at least 3 characters"),
 });
 
+// Add schemas for new tables
+export const insertLearningProgressSchema = createInsertSchema(learningProgress).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertLearningPreferencesSchema = createInsertSchema(learningPreferences).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export const insertRecommendationSchema = createInsertSchema(recommendations).omit({
+  id: true,
+  createdAt: true,
+});
+
+
 // Types for frontend
 export type Story = typeof stories.$inferSelect;
 export type InsertStory = z.infer<typeof insertStorySchema>;
@@ -104,6 +156,14 @@ export type Game = typeof games.$inferSelect;
 export type InsertGame = z.infer<typeof insertGameSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+
+// Add types for frontend
+export type LearningProgress = typeof learningProgress.$inferSelect;
+export type InsertLearningProgress = z.infer<typeof insertLearningProgressSchema>;
+export type LearningPreferences = typeof learningPreferences.$inferSelect;
+export type InsertLearningPreferences = z.infer<typeof insertLearningPreferencesSchema>;
+export type Recommendation = typeof recommendations.$inferSelect;
+export type InsertRecommendation = z.infer<typeof insertRecommendationSchema>;
 
 export const generateStorySchema = z.object({
   sourceLanguage: z.string(),
