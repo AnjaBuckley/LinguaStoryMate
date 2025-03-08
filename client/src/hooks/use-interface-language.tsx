@@ -123,13 +123,15 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const { data: preferences } = useQuery<LearningPreferences>({
     queryKey: ["/api/learning-preferences"],
+    staleTime: 0, // Always fetch fresh data
+    cacheTime: 0, // Don't cache the data
   });
 
   useEffect(() => {
-    if (preferences?.interfaceLanguage) {
+    if (preferences?.interfaceLanguage && LANGUAGES[preferences.interfaceLanguage as keyof typeof LANGUAGES]) {
       setCurrentLanguage(preferences.interfaceLanguage as keyof typeof LANGUAGES);
     }
-  }, [preferences]);
+  }, [preferences?.interfaceLanguage]); // Only run when interfaceLanguage changes
 
   return (
     <LanguageContext.Provider 
