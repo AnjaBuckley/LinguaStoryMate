@@ -79,7 +79,7 @@ export default function StoryGenerator() {
                 name="sourceLanguage"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Source Language</FormLabel>
+                    <FormLabel>Language you want to learn</FormLabel>
                     <FormControl>
                       <LanguageSelector
                         value={field.value}
@@ -96,7 +96,7 @@ export default function StoryGenerator() {
                 name="targetLanguage"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Target Language</FormLabel>
+                    <FormLabel>Mother Tongue</FormLabel>
                     <FormControl>
                       <LanguageSelector
                         value={field.value}
