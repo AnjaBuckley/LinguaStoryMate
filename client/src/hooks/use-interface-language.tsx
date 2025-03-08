@@ -10,6 +10,17 @@ export const LANGUAGES = {
     difficulty: "Difficulty",
     source: "Source",
     target: "Target",
+    // Story Generator texts
+    createStory: "Create a New Story",
+    storyTopic: "Story Topic",
+    enterTopic: "Enter a topic (e.g. animals, space, family)",
+    generateStory: "Generate Story",
+    generatingStory: "Generating Story...",
+    difficultyLevel: "Difficulty Level",
+    selectDifficulty: "Select difficulty",
+    beginner: "Beginner",
+    intermediate: "Intermediate",
+    advanced: "Advanced"
   },
   "Deutsch": {
     title: "Sprachlern-Abenteuer",
@@ -18,6 +29,16 @@ export const LANGUAGES = {
     difficulty: "Schwierigkeit",
     source: "Quelle",
     target: "Ziel",
+    createStory: "Neue Geschichte erstellen",
+    storyTopic: "Geschichtenthema",
+    enterTopic: "Gib ein Thema ein (z.B. Tiere, Weltall, Familie)",
+    generateStory: "Geschichte generieren",
+    generatingStory: "Generiere Geschichte...",
+    difficultyLevel: "Schwierigkeitsgrad",
+    selectDifficulty: "Schwierigkeit auswählen",
+    beginner: "Anfänger",
+    intermediate: "Fortgeschritten",
+    advanced: "Experte"
   },
   "Français": {
     title: "Aventures d'Apprentissage des Langues",
@@ -26,6 +47,16 @@ export const LANGUAGES = {
     difficulty: "Difficulté",
     source: "Source",
     target: "Cible",
+    createStory: "Créer une nouvelle histoire",
+    storyTopic: "Thème de l'histoire",
+    enterTopic: "Entrez un thème (ex: animaux, espace, famille)",
+    generateStory: "Générer l'histoire",
+    generatingStory: "Génération de l'histoire...",
+    difficultyLevel: "Niveau de difficulté",
+    selectDifficulty: "Sélectionnez la difficulté",
+    beginner: "Débutant",
+    intermediate: "Intermédiaire",
+    advanced: "Avancé"
   },
   "Español": {
     title: "Aventuras de Aprendizaje de Idiomas",
@@ -34,6 +65,16 @@ export const LANGUAGES = {
     difficulty: "Dificultad",
     source: "Origen",
     target: "Destino",
+    createStory: "Crear nueva historia",
+    storyTopic: "Tema de la historia",
+    enterTopic: "Ingresa un tema (ej: animales, espacio, familia)",
+    generateStory: "Generar historia",
+    generatingStory: "Generando historia...",
+    difficultyLevel: "Nivel de dificultad",
+    selectDifficulty: "Seleccionar dificultad",
+    beginner: "Principiante",
+    intermediate: "Intermedio",
+    advanced: "Avanzado"
   },
   "Italiano": {
     title: "Avventure di Apprendimento Linguistico",
@@ -42,6 +83,16 @@ export const LANGUAGES = {
     difficulty: "Difficoltà",
     source: "Origine",
     target: "Destinazione",
+    createStory: "Crea una nuova storia",
+    storyTopic: "Tema della storia",
+    enterTopic: "Inserisci un tema (es: animali, spazio, famiglia)",
+    generateStory: "Genera storia",
+    generatingStory: "Generazione della storia...",
+    difficultyLevel: "Livello di difficoltà",
+    selectDifficulty: "Seleziona difficoltà",
+    beginner: "Principiante",
+    intermediate: "Intermedio",
+    advanced: "Avanzato"
   }
 };
 
