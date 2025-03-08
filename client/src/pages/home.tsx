@@ -1,0 +1,62 @@
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import StoryGenerator from "@/components/story-generator";
+import { Story } from "@shared/schema";
+import { Link } from "wouter";
+
+export default function Home() {
+  const { data: stories, isLoading } = useQuery<Story[]>({
+    queryKey: ["/api/stories"],
+  });
+
+  return (
+    <div className="min-h-screen bg-background p-8">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-4xl font-bold text-primary mb-8">
+          Language Learning Adventures
+        </h1>
+
+        <StoryGenerator />
+
+        <h2 className="text-2xl font-semibold mt-12 mb-6">Your Stories</h2>
+        
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="animate-pulse">
+                <CardContent className="h-48" />
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {stories?.map((story) => (
+              <Link key={story.id} href={`/story/${story.id}`}>
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <CardTitle>{story.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <img
+                      src={story.imageUrl}
+                      alt={story.title}
+                      className="w-full h-32 object-cover rounded-md"
+                    />
+                    <div className="mt-4 flex gap-2">
+                      <span className="text-sm bg-secondary/20 px-2 py-1 rounded">
+                        {story.sourceLanguage} → {story.targetLanguage}
+                      </span>
+                      <span className="text-sm bg-accent/20 px-2 py-1 rounded">
+                        {story.difficulty}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
