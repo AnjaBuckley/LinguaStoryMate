@@ -31,37 +31,73 @@ const LANGUAGES = {
     welcome: "Let's personalize your learning journey! 📚",
     success: "Great choices! I'll help you learn in English! 🌟",
     error: "Oops! Something went wrong. Let's try again! 🔄",
-    goalUpdate: "Setting goals is the first step to success! 🎯"
+    goalUpdate: "Setting goals is the first step to success! 🎯",
+    preferences: "Learning Preferences",
+    interface: "Interface Language",
+    goal: "Daily Learning Goal (minutes)",
+    save: "Save Preferences",
+    streak: "Daily Streak",
+    days: "days in a row",
+    profile: "Your Learning Profile"
   },
   "Deutsch": {
     welcome: "Lass uns deine Lernreise personalisieren! 📚",
     success: "Tolle Auswahl! Ich helfe dir beim Lernen auf Deutsch! 🌟",
     error: "Ups! Etwas ist schiefgegangen. Versuchen wir es nochmal! 🔄",
-    goalUpdate: "Ziele zu setzen ist der erste Schritt zum Erfolg! 🎯"
+    goalUpdate: "Ziele zu setzen ist der erste Schritt zum Erfolg! 🎯",
+    preferences: "Lerneinstellungen",
+    interface: "Oberflächensprache",
+    goal: "Tägliches Lernziel (Minuten)",
+    save: "Einstellungen speichern",
+    streak: "Tägliche Serie",
+    days: "Tage in Folge",
+    profile: "Dein Lernprofil"
   },
   "Français": {
     welcome: "Personnalisons votre parcours d'apprentissage ! 📚",
     success: "Excellents choix ! Je vais vous aider à apprendre en français ! 🌟",
     error: "Oups ! Quelque chose s'est mal passé. Réessayons ! 🔄",
-    goalUpdate: "Se fixer des objectifs est la première étape vers la réussite ! 🎯"
+    goalUpdate: "Se fixer des objectifs est la première étape vers la réussite ! 🎯",
+    preferences: "Préférences d'apprentissage",
+    interface: "Langue de l'interface",
+    goal: "Objectif quotidien (minutes)",
+    save: "Enregistrer les préférences",
+    streak: "Série quotidienne",
+    days: "jours consécutifs",
+    profile: "Votre profil d'apprentissage"
   },
   "Español": {
     welcome: "¡Personalicemos tu viaje de aprendizaje! 📚",
     success: "¡Excelentes elecciones! ¡Te ayudaré a aprender en español! 🌟",
     error: "¡Ups! Algo salió mal. ¡Intentémoslo de nuevo! 🔄",
-    goalUpdate: "¡Establecer metas es el primer paso hacia el éxito! 🎯"
+    goalUpdate: "¡Establecer metas es el primer paso hacia el éxito! 🎯",
+    preferences: "Preferencias de aprendizaje",
+    interface: "Idioma de la interfaz",
+    goal: "Objetivo diario (minutos)",
+    save: "Guardar preferencias",
+    streak: "Racha diaria",
+    days: "días consecutivos",
+    profile: "Tu perfil de aprendizaje"
   },
   "Italiano": {
     welcome: "Personalizziamo il tuo percorso di apprendimento! 📚",
     success: "Ottime scelte! Ti aiuterò a imparare in italiano! 🌟",
     error: "Ops! Qualcosa è andato storto. Riproviamo! 🔄",
-    goalUpdate: "Stabilire obiettivi è il primo passo verso il successo! 🎯"
+    goalUpdate: "Stabilire obiettivi è il primo passo verso il successo! 🎯",
+    preferences: "Preferenze di apprendimento",
+    interface: "Lingua dell'interfaccia",
+    goal: "Obiettivo giornaliero (minuti)",
+    save: "Salva preferenze",
+    streak: "Serie giornaliera",
+    days: "giorni consecutivi",
+    profile: "Il tuo profilo di apprendimento"
   }
 };
 
 export default function LearningPreferencesPage() {
   const { toast } = useToast();
   const [mascotMessage, setMascotMessage] = useState(LANGUAGES["English"].welcome);
+  const [currentLanguage, setCurrentLanguage] = useState("English");
 
   const { data: preferences, isLoading } = useQuery<LearningPreferences>({
     queryKey: ["/api/learning-preferences"],
@@ -82,12 +118,13 @@ export default function LearningPreferencesPage() {
       return res.json();
     },
     onSuccess: (data) => {
+      const newLanguage = data.interfaceLanguage as keyof typeof LANGUAGES;
+      setCurrentLanguage(newLanguage);
       toast({
         title: "Preferences saved",
         description: "Your learning preferences have been updated",
       });
-      const messages = LANGUAGES[data.interfaceLanguage as keyof typeof LANGUAGES];
-      setMascotMessage(messages.success);
+      setMascotMessage(LANGUAGES[newLanguage].success);
     },
     onError: (error) => {
       toast({
@@ -114,17 +151,19 @@ export default function LearningPreferencesPage() {
     );
   }
 
+  const texts = LANGUAGES[currentLanguage as keyof typeof LANGUAGES];
+
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-primary mb-8">Learning Preferences</h1>
+        <h1 className="text-4xl font-bold text-primary mb-8">{texts.preferences}</h1>
 
         <div className="grid gap-8">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Goal className="h-6 w-6" />
-                Your Learning Profile
+                {texts.profile}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -135,10 +174,11 @@ export default function LearningPreferencesPage() {
                     name="interfaceLanguage"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Interface Language</FormLabel>
+                        <FormLabel>{texts.interface}</FormLabel>
                         <Select
                           onValueChange={(value) => {
                             field.onChange(value);
+                            setCurrentLanguage(value as keyof typeof LANGUAGES);
                             setMascotMessage(LANGUAGES[value as keyof typeof LANGUAGES].welcome);
                           }}
                           defaultValue={field.value}
@@ -166,14 +206,15 @@ export default function LearningPreferencesPage() {
                     name="dailyGoalMinutes"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Daily Learning Goal (minutes)</FormLabel>
+                        <FormLabel>{texts.goal}</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
                             {...field}
                             onChange={(e) => {
-                              field.onChange(Number(e.target.value));
-                              setMascotMessage(LANGUAGES[form.getValues("interfaceLanguage")].goalUpdate);
+                              const value = Number(e.target.value);
+                              field.onChange(value);
+                              setMascotMessage(LANGUAGES[currentLanguage].goalUpdate);
                             }}
                           />
                         </FormControl>
@@ -187,7 +228,7 @@ export default function LearningPreferencesPage() {
                     className="w-full"
                     disabled={preferenceMutation.isPending}
                   >
-                    Save Preferences
+                    {texts.save}
                   </Button>
                 </form>
               </Form>
@@ -199,16 +240,16 @@ export default function LearningPreferencesPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Flame className="h-6 w-6 text-orange-500" />
-                  Daily Streak
+                  {texts.streak}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-4">
                   <div className="text-4xl font-bold text-orange-500">
-                    {preferences.currentStreak}
+                    {preferences.currentStreak || 0}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    days in a row
+                    {texts.days}
                   </div>
                 </div>
               </CardContent>
