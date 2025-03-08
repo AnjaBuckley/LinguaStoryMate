@@ -7,7 +7,6 @@ import AudioPlayer from "@/components/audio-player";
 import { Book, Brain } from "lucide-react";
 import { exportStoryToPDF } from "@/lib/pdf";
 import { useToast } from "@/hooks/use-toast";
-import VocabularyGame from "@/components/vocabulary-game";
 
 export default function StoryView() {
   const { id } = useParams();
@@ -80,15 +79,6 @@ export default function StoryView() {
             </div>
           </CardContent>
         </Card>
-
-        {/* Add Vocabulary Game */}
-        <div className="mb-8">
-          <VocabularyGame
-            storyId={story.id}
-            sourceLanguage={story.sourceLanguage}
-            targetLanguage={story.targetLanguage}
-          />
-        </div>
 
         <div className="flex gap-4">
           <Button asChild className="flex-1">

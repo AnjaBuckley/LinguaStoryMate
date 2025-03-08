@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer } from "http";
 import { storage } from "./storage";
-import { generateStory, generateImage, generateQuiz, generateAudio, extractVocabulary } from "./lib/openai";
+import { generateStory, generateImage, generateQuiz, generateAudio } from "./lib/openai";
 import { generateStorySchema } from "@shared/schema";
 import { setupAuth } from "./auth";
 import { recommendationService } from "./lib/recommendation-service";
@@ -10,7 +10,6 @@ export async function registerRoutes(app: Express) {
   // Set up authentication routes and middleware
   setupAuth(app);
 
-  // Existing routes...
   app.post("/api/stories/generate", async (req, res) => {
     try {
       if (!req.isAuthenticated()) {
@@ -22,11 +21,6 @@ export async function registerRoutes(app: Express) {
       const imageUrl = await generateImage(storyData.title);
       const audioUrl = await generateAudio(storyData.content);
       const questions = await generateQuiz(storyData.content);
-      const vocabulary = await extractVocabulary(
-        storyData.content,
-        params.sourceLanguage,
-        params.targetLanguage
-      );
 
       const story = await storage.createStory({
         ...storyData,
@@ -35,46 +29,20 @@ export async function registerRoutes(app: Express) {
         sourceLanguage: params.sourceLanguage,
         targetLanguage: params.targetLanguage,
         difficulty: params.difficulty,
-        userId: req.user.id, // Add user ID to story
+        userId: req.user.id,
       });
-
-      await Promise.all(
-        vocabulary.map((item) =>
-          storage.createVocabularyItem({
-            storyId: story.id,
-            sourceWord: item.sourceWord,
-            targetWord: item.targetWord,
-            context: item.context,
-            difficulty: params.difficulty,
-          })
-        )
-      );
 
       const quiz = await storage.createQuiz({
         storyId: story.id,
         questions,
       });
 
-      const game = await storage.createGame({
-        storyId: story.id,
-        type: "matching",
-        content: {
-          words: vocabulary.map(({ sourceWord, targetWord, context }) => ({
-            sourceWord,
-            targetWord,
-            context,
-          })),
-        },
-        difficulty: params.difficulty,
-      });
-
-      res.json({ story, quiz, game });
+      res.json({ story, quiz });
     } catch (error) {
       res.status(400).json({ error: error.message });
     }
   });
 
-  // Update listStories to only return user's stories
   app.get("/api/stories", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -101,25 +69,6 @@ export async function registerRoutes(app: Express) {
     res.json(quiz);
   });
 
-  app.get("/api/vocabulary/:storyId", async (req, res) => {
-    try {
-      const items = await storage.getVocabularyItems(Number(req.params.storyId));
-      res.json(items);
-    } catch (error) {
-      res.status(400).json({ error: error.message });
-    }
-  });
-
-  app.get("/api/games/:storyId", async (req, res) => {
-    try {
-      const games = await storage.getGames(Number(req.params.storyId));
-      res.json(games);
-    } catch (error) {
-      res.status(400).json({ error: error.message });
-    }
-  });
-
-  // Add to existing routes...
   app.post("/api/learning-preferences", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -139,9 +88,7 @@ export async function registerRoutes(app: Express) {
         });
       }
 
-      // Generate new recommendations based on updated preferences
       await recommendationService.generateRecommendations(userId);
-
       res.json(preferences);
     } catch (error) {
       res.status(400).json({ error: error.message });
@@ -187,7 +134,6 @@ export async function registerRoutes(app: Express) {
     }
   });
 
-  // Update the story completion endpoint to track progress and generate recommendations
   app.post("/api/stories/:id/complete", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -196,20 +142,17 @@ export async function registerRoutes(app: Express) {
     try {
       const storyId = Number(req.params.id);
       const userId = req.user.id;
-      const { quizScore, vocabularyScore, timeSpent } = req.body;
+      const { quizScore, timeSpent } = req.body;
 
       const progress = await storage.createLearningProgress({
         userId,
         storyId,
         quizScore,
-        vocabularyScore,
         timeSpent,
         completed: true,
       });
 
-      // Generate new recommendations based on completed story
       await recommendationService.generateRecommendations(userId);
-
       res.json(progress);
     } catch (error) {
       res.status(400).json({ error: error.message });
