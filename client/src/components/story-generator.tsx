@@ -27,35 +27,58 @@ import { useToast } from "@/hooks/use-toast";
 import { useInterfaceLanguage } from "@/hooks/use-interface-language";
 import LearningBuddy from "./learning-buddy";
 
-const LANGUAGE_MAPPING = {
-  // Display name to API value mapping
-  "English": "English",
-  "Deutsch": "German",
-  "Français": "French",
-  "Español": "Spanish",
-  "Italiano": "Italian"
+// Display names to API values mapping
+const LANGUAGES = {
+  en: {
+    "English": "English",
+    "German": "German",
+    "French": "French",
+    "Spanish": "Spanish",
+    "Italian": "Italian",
+    "Swedish": "Swedish",
+    "Dutch": "Dutch",
+    "Norwegian": "Norwegian",
+    "Danish": "Danish",
+    "Polish": "Polish",
+    "Hungarian": "Hungarian",
+    "Turkish": "Turkish",
+    "Japanese": "Japanese",
+    "Russian": "Russian",
+    "Chinese": "Chinese",
+    "Portuguese": "Portuguese"
+  },
+  de: {
+    "English": "Englisch",
+    "German": "Deutsch",
+    "French": "Französisch",
+    "Spanish": "Spanisch",
+    "Italian": "Italienisch",
+    "Swedish": "Schwedisch",
+    "Dutch": "Niederländisch",
+    "Norwegian": "Norwegisch",
+    "Danish": "Dänisch",
+    "Polish": "Polnisch",
+    "Hungarian": "Ungarisch",
+    "Turkish": "Türkisch",
+    "Japanese": "Japanisch",
+    "Russian": "Russisch",
+    "Chinese": "Chinesisch",
+    "Portuguese": "Portugiesisch"
+  }
 };
-
-const AVAILABLE_LANGUAGES = [
-  "English",
-  "Deutsch",
-  "Français",
-  "Español",
-  "Italiano"
-];
 
 export default function StoryGenerator() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const { texts } = useInterfaceLanguage();
+  const { texts, currentLanguage } = useInterfaceLanguage();
   const [isGenerating, setIsGenerating] = useState(false);
   const [mascotMessage, setMascotMessage] = useState("Let's create a new story! Choose your languages and topic. 📚");
 
   const form = useForm<GenerateStoryRequest>({
     resolver: zodResolver(generateStorySchema),
     defaultValues: {
-      sourceLanguage: "",
-      targetLanguage: "",
+      sourceLanguage: "English",
+      targetLanguage: "English",
       difficulty: "beginner",
       topic: "",
     },
@@ -63,11 +86,7 @@ export default function StoryGenerator() {
 
   const generateMutation = useMutation({
     mutationFn: async (data: GenerateStoryRequest) => {
-      const res = await apiRequest("POST", "/api/stories/generate", {
-        ...data,
-        sourceLanguage: LANGUAGE_MAPPING[data.sourceLanguage as keyof typeof LANGUAGE_MAPPING],
-        targetLanguage: LANGUAGE_MAPPING[data.targetLanguage as keyof typeof LANGUAGE_MAPPING],
-      });
+      const res = await apiRequest("POST", "/api/stories/generate", data);
       return res.json();
     },
     onSuccess: (data) => {
@@ -90,6 +109,9 @@ export default function StoryGenerator() {
     setMascotMessage("Creating your personalized story... This will be fun! ✨");
     generateMutation.mutate(data);
   };
+
+  const availableLanguages = Object.keys(LANGUAGES.en);
+  const localizedLanguages = LANGUAGES[currentLanguage as 'en' | 'de'];
 
   return (
     <Card>
@@ -116,9 +138,9 @@ export default function StoryGenerator() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {AVAILABLE_LANGUAGES.map((lang) => (
+                        {availableLanguages.map((lang) => (
                           <SelectItem key={lang} value={lang}>
-                            {lang}
+                            {localizedLanguages[lang]}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -144,9 +166,9 @@ export default function StoryGenerator() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {AVAILABLE_LANGUAGES.map((lang) => (
+                        {availableLanguages.map((lang) => (
                           <SelectItem key={lang} value={lang}>
-                            {lang}
+                            {localizedLanguages[lang]}
                           </SelectItem>
                         ))}
                       </SelectContent>
