@@ -7,6 +7,8 @@ import AudioPlayer from "@/components/audio-player";
 import { Book, Brain } from "lucide-react";
 import { exportStoryToPDF } from "@/lib/pdf";
 import { useToast } from "@/hooks/use-toast";
+import "@fontsource/noto-sans-jp/400.css";
+import "@fontsource/noto-sans-jp/700.css";
 
 export default function StoryView() {
   const { id } = useParams();

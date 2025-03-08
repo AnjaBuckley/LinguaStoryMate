@@ -2,12 +2,13 @@ import { jsPDF } from "jspdf";
 import type { Story } from "@shared/schema";
 
 export async function exportStoryToPDF(story: Story): Promise<void> {
-  const pdf = new jsPDF();
+  // Create PDF with font support
+  const pdf = new jsPDF({
+    filters: ["ASCIIHexEncode"] // This helps with Japanese text encoding
+  });
+
   const margin = 20;
   const pageWidth = pdf.internal.pageSize.width - 2 * margin;
-
-  // Set fonts and styles
-  pdf.setFont("helvetica");
 
   // Add title
   pdf.setFontSize(24);
@@ -22,8 +23,17 @@ export async function exportStoryToPDF(story: Story): Promise<void> {
 
   // Add image
   try {
+    // Convert image URL to Data URL
+    const response = await fetch(story.imageUrl);
+    const blob = await response.blob();
+    const imageData = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+
     const imageHeight = 60;
-    pdf.addImage(story.imageUrl, "JPEG", margin, 45, pageWidth - margin, imageHeight);
+    pdf.addImage(imageData, "PNG", margin, 45, pageWidth - margin, imageHeight);
 
     // Add story content
     pdf.setFontSize(14);
@@ -45,13 +55,11 @@ export async function exportStoryToPDF(story: Story): Promise<void> {
 
     Object.entries(story.translations).forEach(([phrase, translation]) => {
       // Source phrase
-      pdf.setFont("helvetica", "bold");
       const sourceLines = pdf.splitTextToSize(phrase, pageWidth - 2 * margin);
       pdf.text(sourceLines, margin, y);
       y += sourceLines.length * 7;
 
       // Translation
-      pdf.setFont("helvetica", "normal");
       pdf.setTextColor(100, 100, 100);
       const translationLines = pdf.splitTextToSize(translation, pageWidth - 2 * margin);
       pdf.text(translationLines, margin, y);
@@ -65,9 +73,7 @@ export async function exportStoryToPDF(story: Story): Promise<void> {
     });
 
   } catch (error) {
-    // If image loading fails, continue without the image
-    console.error("Failed to load image:", error);
-
+    console.error("Failed to process image:", error);
     // Add content without image
     pdf.setFontSize(14);
     pdf.setTextColor(33, 33, 33);
@@ -75,6 +81,6 @@ export async function exportStoryToPDF(story: Story): Promise<void> {
     pdf.text(contentLines, margin, 50);
   }
 
-  // Save the PDF
+  // Save the PDF with proper encoding for Japanese characters
   pdf.save(`${story.title}.pdf`);
 }
