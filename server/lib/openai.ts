@@ -15,14 +15,16 @@ export async function generateStory(request: GenerateStoryRequest) {
 - Difficulty: ${request.difficulty}
 - Topic: ${request.topic}
 
-Please provide the response in this JSON format:
+You must respond with a JSON object in this exact format:
 {
-  "title": "Story title",
+  "title": "Story title in source language",
   "content": "Story content in source language",
   "translations": {
-    "key phrases": "translations in target language"
+    "key phrases from content": "translation in target language"
   }
-}`;
+}
+
+Make the story fun and engaging for children!`;
 
   const response = await openai.chat.completions.create({
     model: "gpt-4o",
@@ -30,7 +32,7 @@ Please provide the response in this JSON format:
     response_format: { type: "json_object" },
   });
 
-  return JSON.parse(response.choices[0].message.content);
+  return JSON.parse(response.choices[0].message.content || "{}");
 }
 
 export async function generateImage(prompt: string) {
@@ -47,8 +49,8 @@ export async function generateImage(prompt: string) {
 
 export async function generateQuiz(content: string): Promise<QuizQuestion[]> {
   const prompt = `Generate 5 multiple choice questions based on this story: ${content}
-  
-Response format:
+
+Please respond with a JSON object in this exact format:
 {
   "questions": [
     {
@@ -65,6 +67,6 @@ Response format:
     response_format: { type: "json_object" },
   });
 
-  const result = JSON.parse(response.choices[0].message.content);
+  const result = JSON.parse(response.choices[0].message.content || "{}");
   return result.questions;
 }
