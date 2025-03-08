@@ -160,6 +160,7 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // Update the story completion endpoint to handle empty vocabulary properly
   app.post("/api/stories/:id/complete", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
@@ -168,16 +169,19 @@ export async function registerRoutes(app: Express) {
     try {
       const storyId = Number(req.params.id);
       const userId = req.user.id;
-      const { quizScore, timeSpent } = req.body;
+      const { quizScore, timeSpent, vocabulary = [] } = req.body;
 
       // Update user streak
       const user = await storage.updateUserStreak(userId);
 
-      const vocabularyItems = await storage.createVocabularyItems({
-        userId,
-        storyId,
-        words: req.body.vocabulary || [],
-      });
+      let vocabularyItems = [];
+      if (vocabulary.length > 0) {
+        vocabularyItems = await storage.createVocabularyItems({
+          userId,
+          storyId,
+          words: vocabulary
+        });
+      }
 
       res.json({ user, vocabularyItems });
     } catch (error: any) {
