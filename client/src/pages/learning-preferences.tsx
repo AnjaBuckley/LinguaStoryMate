@@ -24,9 +24,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertLearningPreferencesSchema, type LearningPreferences } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import LanguageSelector from "@/components/language-selector";
 import LearningBuddy from "@/components/learning-buddy";
-import { Clock, Goal, Star, Book } from "lucide-react";
+import { Goal, Star, Book } from "lucide-react";
 
 interface Recommendation {
   id: number;
@@ -38,7 +37,20 @@ interface Recommendation {
   priority: number;
 }
 
-const LANGUAGES = ["English", "Spanish", "French", "German", "Japanese"]; // Example languages
+const LANGUAGES = [
+  "English",
+  "Spanish",
+  "French",
+  "German",
+  "Italian",
+  "Portuguese",
+  "Chinese",
+  "Japanese",
+  "Korean",
+  "Turkish",
+  "Swedish",
+  "Russian",
+];
 
 export default function LearningPreferencesPage() {
   const { toast } = useToast();
