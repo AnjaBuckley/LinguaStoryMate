@@ -1,6 +1,6 @@
-import { users, stories, quizzes, vocabularyItems, type Story, type InsertStory, type Quiz, type InsertQuiz, type VocabularyItem, type InsertVocabularyItem, type User, type InsertUser } from "@shared/schema";
+import { users, stories, quizzes, vocabularyItems, type Story, type InsertStory, type Quiz, type InsertQuiz, type VocabularyItem, type InsertVocabularyItem, type User, type InsertUser, completedStories } from "@shared/schema";
 import { db, checkDatabaseConnection } from "./db";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and } from "drizzle-orm";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import { randomBytes, scrypt } from 'crypto';
@@ -35,6 +35,10 @@ export interface IStorage {
 
   // Session store
   sessionStore: session.Store;
+
+  // Add new method for completed stories
+  createCompletedStory(data: { userId: number; storyId: number; timeSpent?: number; quizScore?: number }): Promise<typeof completedStories.$inferSelect>;
+  getCompletedStories(userId: number): Promise<(typeof completedStories.$inferSelect)[]>;
 }
 
 const MAX_RETRIES = 3;
@@ -143,6 +147,21 @@ export class DatabaseStorage implements IStorage {
       const user = await this.getUser(userId);
       if (!user) throw new Error("User not found");
 
+      // Get user's completed stories to verify activity
+      const completedToday = await db
+        .select()
+        .from(completedStories)
+        .where(
+          and(
+            eq(completedStories.userId, userId),
+            sql`DATE(${completedStories.completedAt}) = CURRENT_DATE`
+          )
+        );
+
+      if (completedToday.length === 0) {
+        return user; // No stories completed today, don't update streak
+      }
+
       const lastActivity = user.lastActivityDate ? new Date(user.lastActivityDate) : new Date(0);
       const today = new Date();
 
@@ -231,6 +250,23 @@ export class DatabaseStorage implements IStorage {
     const salt = randomBytes(16).toString("hex");
     const buf = (await scryptAsync(password, salt, 64)) as Buffer;
     return `${buf.toString("hex")}.${salt}`;
+  }
+
+  async createCompletedStory(data: { userId: number; storyId: number; timeSpent?: number; quizScore?: number }) {
+    return withRetry(async () => {
+      const [completed] = await db.insert(completedStories).values(data).returning();
+      return completed;
+    });
+  }
+
+  async getCompletedStories(userId: number) {
+    return withRetry(async () => {
+      return await db
+        .select()
+        .from(completedStories)
+        .where(eq(completedStories.userId, userId))
+        .orderBy(sql`${completedStories.completedAt} DESC`);
+    });
   }
 }
 

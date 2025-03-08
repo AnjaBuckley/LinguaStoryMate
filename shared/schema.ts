@@ -30,6 +30,16 @@ export const stories = pgTable("stories", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Add completedStories table to track story completion
+export const completedStories = pgTable("completed_stories", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  storyId: integer("story_id").references(() => stories.id),
+  completedAt: timestamp("completed_at").defaultNow(),
+  timeSpent: integer("time_spent"),
+  quizScore: integer("quiz_score"),
+});
+
 export const vocabularyItems = pgTable("vocabulary_items", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id),
@@ -89,13 +99,13 @@ export const insertVocabularyItemSchema = createInsertSchema(vocabularyItems).om
 
 export const generateStorySchema = z.object({
   sourceLanguage: z.enum([
-    "English", "Spanish", "French", "German", "Italian", 
+    "English", "Spanish", "French", "German", "Italian",
     "Swedish", "Dutch", "Norwegian", "Danish", "Polish",
     "Hungarian", "Turkish", "Japanese", "Russian", "Chinese",
     "Portuguese"
   ]),
   targetLanguage: z.enum([
-    "English", "Spanish", "French", "German", "Italian", 
+    "English", "Spanish", "French", "German", "Italian",
     "Swedish", "Dutch", "Norwegian", "Danish", "Polish",
     "Hungarian", "Turkish", "Japanese", "Russian", "Chinese",
     "Portuguese"
