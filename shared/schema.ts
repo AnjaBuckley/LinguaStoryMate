@@ -59,12 +59,12 @@ export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
   currentStreak: true,
   lastActivityDate: true,
+  interfaceLanguage: true, // Make this optional since it has a default
+  dailyGoalMinutes: true, // Make this optional since it has a default
 }).extend({
   password: z.string().min(6, "Password must be at least 6 characters"),
   username: z.string().min(3, "Username must be at least 3 characters"),
   email: z.string().email("Invalid email address"),
-  interfaceLanguage: z.enum(["en", "de"]),
-  dailyGoalMinutes: z.number().min(5).max(240),
 });
 
 export const insertStorySchema = createInsertSchema(stories).omit({
