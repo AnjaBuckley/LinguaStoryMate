@@ -37,7 +37,7 @@ export async function registerRoutes(app: Express) {
       });
 
       res.json({ story, quiz });
-    } catch (error) {
+    } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
   });
@@ -68,40 +68,16 @@ export async function registerRoutes(app: Express) {
     res.json(quiz);
   });
 
-  app.post("/api/learning-preferences", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
+  // User settings endpoints
+  app.patch("/api/users/:id", async (req, res) => {
     try {
-      const userId = req.user.id;
-      const existingPreferences = await storage.getLearningPreferences(userId);
-
-      let preferences;
-      if (existingPreferences) {
-        preferences = await storage.updateLearningPreferences(userId, req.body);
-      } else {
-        preferences = await storage.createLearningPreferences({
-          ...req.body,
-          userId,
-        });
+      if (!req.isAuthenticated() || req.user.id !== Number(req.params.id)) {
+        return res.status(401).json({ error: "Not authorized" });
       }
 
-      res.json(preferences);
-    } catch (error) {
-      res.status(400).json({ error: error.message });
-    }
-  });
-
-  app.get("/api/learning-preferences", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    try {
-      const preferences = await storage.getLearningPreferences(req.user.id);
-      res.json(preferences);
-    } catch (error) {
+      const updatedUser = await storage.updateUser(Number(req.params.id), req.body);
+      res.json(updatedUser);
+    } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
   });
@@ -116,19 +92,17 @@ export async function registerRoutes(app: Express) {
       const userId = req.user.id;
       const { quizScore, timeSpent } = req.body;
 
-      const progress = await storage.createLearningProgress({
+      // Update user streak
+      const user = await storage.updateUserStreak(userId);
+
+      const vocabularyItems = await storage.createVocabularyItems({
         userId,
         storyId,
-        quizScore,
-        timeSpent,
-        completed: true,
+        words: req.body.vocabulary || [],
       });
 
-      // Update streak when story is completed
-      await storage.updateLearningStreak(userId);
-
-      res.json(progress);
-    } catch (error) {
+      res.json({ user, vocabularyItems });
+    } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
   });

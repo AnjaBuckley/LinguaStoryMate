@@ -1,11 +1,13 @@
-import { createContext, useContext, useEffect, ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
-import type { LearningPreferences } from "@shared/schema";
+import { createContext, useContext, ReactNode } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import type { User } from "@shared/schema";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "./use-auth";
 
-export const LANGUAGES = {
-  "English": {
+const TRANSLATIONS = {
+  en: {
     title: "Language Learning Adventures",
-    settings: "Learning Preferences",
+    settings: "User Settings",
     stories: "Your Stories",
     createStory: "Create a New Story",
     storyTopic: "Story Topic",
@@ -21,9 +23,9 @@ export const LANGUAGES = {
     motherTongue: "Your mother tongue",
     selectLanguage: "Select language"
   },
-  "Deutsch": {
+  de: {
     title: "Sprachlern-Abenteuer",
-    settings: "Lerneinstellungen",
+    settings: "Benutzereinstellungen",
     stories: "Deine Geschichten",
     createStory: "Neue Geschichte erstellen",
     storyTopic: "Geschichtenthema",
@@ -38,82 +40,43 @@ export const LANGUAGES = {
     learnLanguage: "Sprache, die du lernen möchtest",
     motherTongue: "Deine Muttersprache",
     selectLanguage: "Sprache auswählen"
-  },
-  "Français": {
-    title: "Aventures d'Apprentissage des Langues",
-    settings: "Préférences d'apprentissage",
-    stories: "Vos Histoires",
-    createStory: "Créer une nouvelle histoire",
-    storyTopic: "Thème de l'histoire",
-    enterTopic: "Entrez un thème (ex: animaux, espace, famille)",
-    generateStory: "Générer l'histoire",
-    generatingStory: "Génération de l'histoire...",
-    difficultyLevel: "Niveau de difficulté",
-    selectDifficulty: "Sélectionnez la difficulté",
-    beginner: "Débutant",
-    intermediate: "Intermédiaire",
-    advanced: "Avancé",
-    learnLanguage: "Langue que vous souhaitez apprendre",
-    motherTongue: "Votre langue maternelle",
-    selectLanguage: "Sélectionner la langue"
-  },
-  "Español": {
-    title: "Aventuras de Aprendizaje de Idiomas",
-    settings: "Preferencias de aprendizaje",
-    stories: "Tus Historias",
-    createStory: "Crear nueva historia",
-    storyTopic: "Tema de la historia",
-    enterTopic: "Ingresa un tema (ej: animales, espacio, familia)",
-    generateStory: "Generar historia",
-    generatingStory: "Generando historia...",
-    difficultyLevel: "Nivel de dificultad",
-    selectDifficulty: "Seleccionar dificultad",
-    beginner: "Principiante",
-    intermediate: "Intermedio",
-    advanced: "Avanzado",
-    learnLanguage: "Idioma que quieres aprender",
-    motherTongue: "Tu lengua materna",
-    selectLanguage: "Seleccionar idioma"
-  },
-  "Italiano": {
-    title: "Avventure di Apprendimento Linguistico",
-    settings: "Preferenze di apprendimento",
-    stories: "Le tue Storie",
-    createStory: "Crea una nuova storia",
-    storyTopic: "Tema della storia",
-    enterTopic: "Inserisci un tema (es: animali, spazio, famiglia)",
-    generateStory: "Genera storia",
-    generatingStory: "Generazione della storia...",
-    difficultyLevel: "Livello di difficoltà",
-    selectDifficulty: "Seleziona difficoltà",
-    beginner: "Principiante",
-    intermediate: "Intermedio",
-    advanced: "Avanzato",
-    learnLanguage: "Lingua che vuoi imparare",
-    motherTongue: "La tua lingua madre",
-    selectLanguage: "Seleziona lingua"
   }
 };
 
-type LanguageKey = keyof typeof LANGUAGES;
-
 type LanguageContextType = {
-  texts: typeof LANGUAGES[LanguageKey];
+  texts: typeof TRANSLATIONS['en'];
+  toggleLanguage: () => void;
+  currentLanguage: 'en' | 'de';
 };
 
 const LanguageContext = createContext<LanguageContextType | null>(null);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const { data: preferences } = useQuery<LearningPreferences>({
-    queryKey: ["/api/learning-preferences"],
-    refetchInterval: 0
+  const { user } = useAuth();
+
+  const toggleLanguageMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) return;
+      const newLanguage = user.interfaceLanguage === 'en' ? 'de' : 'en';
+      const res = await apiRequest("PATCH", `/api/users/${user.id}`, {
+        interfaceLanguage: newLanguage
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+    }
   });
 
-  const languageKey = (preferences?.interfaceLanguage || "English") as LanguageKey;
-  const texts = LANGUAGES[languageKey];
+  const currentLanguage = (user?.interfaceLanguage || 'en') as 'en' | 'de';
+  const texts = TRANSLATIONS[currentLanguage];
 
   return (
-    <LanguageContext.Provider value={{ texts }}>
+    <LanguageContext.Provider value={{ 
+      texts,
+      currentLanguage,
+      toggleLanguage: () => toggleLanguageMutation.mutate()
+    }}>
       {children}
     </LanguageContext.Provider>
   );

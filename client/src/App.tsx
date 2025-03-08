@@ -10,7 +10,7 @@ import StoryView from "@/pages/story-view";
 import Quiz from "@/pages/quiz";
 import AuthPage from "@/pages/auth";
 import NotFound from "@/pages/not-found";
-import LearningPreferences from "@/pages/learning-preferences";
+import Settings from "@/pages/settings";
 
 function Router() {
   return (
@@ -18,7 +18,7 @@ function Router() {
       <ProtectedRoute path="/" component={Home} />
       <ProtectedRoute path="/story/:id" component={StoryView} />
       <ProtectedRoute path="/quiz/:storyId" component={Quiz} />
-      <ProtectedRoute path="/learning-preferences" component={LearningPreferences} />
+      <ProtectedRoute path="/settings" component={Settings} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>

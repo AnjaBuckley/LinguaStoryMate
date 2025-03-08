@@ -5,7 +5,12 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
   password: text("password").notNull(),
+  interfaceLanguage: text("interface_language").default("en").notNull(),
+  dailyGoalMinutes: integer("daily_goal_minutes").default(30),
+  currentStreak: integer("current_streak").default(0),
+  lastActivityDate: timestamp("last_activity_date").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -23,64 +28,22 @@ export const stories = pgTable("stories", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const quizzes = pgTable("quizzes", {
-  id: serial("id").primaryKey(),
-  storyId: integer("story_id").references(() => stories.id),
-  questions: json("questions").notNull().$type<QuizQuestion[]>(),
-});
-
-// New tables for vocabulary games
 export const vocabularyItems = pgTable("vocabulary_items", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
   storyId: integer("story_id").references(() => stories.id),
   sourceWord: text("source_word").notNull(),
   targetWord: text("target_word").notNull(),
   context: text("context"),
-  difficulty: text("difficulty").notNull(),
+  learned: boolean("learned").default(false),
+  reviewedAt: timestamp("reviewed_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const games = pgTable("games", {
+export const quizzes = pgTable("quizzes", {
   id: serial("id").primaryKey(),
   storyId: integer("story_id").references(() => stories.id),
-  type: text("type").notNull(), // 'matching', 'flashcard', 'fill-blank'
-  content: json("content").notNull().$type<GameContent>(),
-  difficulty: text("difficulty").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// New table for tracking learning progress
-export const learningProgress = pgTable("learning_progress", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
-  storyId: integer("story_id").references(() => stories.id),
-  quizScore: integer("quiz_score"),
-  vocabularyScore: integer("vocabulary_score"),
-  timeSpent: integer("time_spent"), // in seconds
-  completed: boolean("completed").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Simplify learning preferences table
-export const learningPreferences = pgTable("learning_preferences", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
-  interfaceLanguage: text("interface_language").notNull(),
-  dailyGoalMinutes: integer("daily_goal_minutes").default(30),
-  currentStreak: integer("current_streak").default(0),
-  lastActivityDate: timestamp("last_activity_date").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-// Table for recommendations
-export const recommendations = pgTable("recommendations", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
-  storyId: integer("story_id").references(() => stories.id),
-  reason: text("reason").notNull(),
-  priority: integer("priority").notNull(), // 1-5, higher is more recommended
-  viewed: boolean("viewed").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
+  questions: json("questions").notNull().$type<QuizQuestion[]>(),
 });
 
 // Types
@@ -90,16 +53,20 @@ export type QuizQuestion = {
   correctAnswer: string;
 };
 
-export type GameContent = {
-  words: Array<{
-    sourceWord: string;
-    targetWord: string;
-    context?: string;
-  }>;
-  hints?: string[];
-};
-
 // Schemas
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  currentStreak: true,
+  lastActivityDate: true,
+}).extend({
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Invalid email address"),
+  interfaceLanguage: z.enum(["en", "de"]),
+  dailyGoalMinutes: z.number().min(5).max(240),
+});
+
 export const insertStorySchema = createInsertSchema(stories).omit({
   id: true,
   createdAt: true,
@@ -112,66 +79,34 @@ export const insertQuizSchema = createInsertSchema(quizzes).omit({
 export const insertVocabularyItemSchema = createInsertSchema(vocabularyItems).omit({
   id: true,
   createdAt: true,
+  reviewedAt: true,
+  learned: true,
 });
 
-export const insertGameSchema = createInsertSchema(games).omit({
-  id: true,
-  createdAt: true,
+export const generateStorySchema = z.object({
+  sourceLanguage: z.enum([
+    "English", "Spanish", "French", "German", "Italian", 
+    "Swedish", "Dutch", "Norwegian", "Danish", "Polish",
+    "Hungarian", "Turkish", "Japanese", "Russian", "Chinese",
+    "Portuguese"
+  ]),
+  targetLanguage: z.enum([
+    "English", "Spanish", "French", "German", "Italian", 
+    "Swedish", "Dutch", "Norwegian", "Danish", "Polish",
+    "Hungarian", "Turkish", "Japanese", "Russian", "Chinese",
+    "Portuguese"
+  ]),
+  difficulty: z.enum(["beginner", "intermediate", "advanced"]),
+  topic: z.string(),
 });
-
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  createdAt: true,
-}).extend({
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  username: z.string().min(3, "Username must be at least 3 characters"),
-});
-
-// Add schemas for new tables
-export const insertLearningProgressSchema = createInsertSchema(learningProgress).omit({
-  id: true,
-  createdAt: true,
-});
-
-// Update schema for the insertLearningPreferences
-export const insertLearningPreferencesSchema = createInsertSchema(learningPreferences).omit({
-  id: true,
-  updatedAt: true,
-  currentStreak: true,
-  lastActivityDate: true,
-});
-
-export const insertRecommendationSchema = createInsertSchema(recommendations).omit({
-  id: true,
-  createdAt: true,
-});
-
 
 // Types for frontend
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Story = typeof stories.$inferSelect;
 export type InsertStory = z.infer<typeof insertStorySchema>;
 export type Quiz = typeof quizzes.$inferSelect;
 export type InsertQuiz = z.infer<typeof insertQuizSchema>;
 export type VocabularyItem = typeof vocabularyItems.$inferSelect;
 export type InsertVocabularyItem = z.infer<typeof insertVocabularyItemSchema>;
-export type Game = typeof games.$inferSelect;
-export type InsertGame = z.infer<typeof insertGameSchema>;
-export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
-
-// Add types for frontend
-export type LearningProgress = typeof learningProgress.$inferSelect;
-export type InsertLearningProgress = z.infer<typeof insertLearningProgressSchema>;
-export type LearningPreferences = typeof learningPreferences.$inferSelect;
-export type InsertLearningPreferences = z.infer<typeof insertLearningPreferencesSchema>;
-export type Recommendation = typeof recommendations.$inferSelect;
-export type InsertRecommendation = z.infer<typeof insertRecommendationSchema>;
-
-export const generateStorySchema = z.object({
-  sourceLanguage: z.string(),
-  targetLanguage: z.string(),
-  difficulty: z.enum(["beginner", "intermediate", "advanced"]),
-  topic: z.string(),
-});
-
 export type GenerateStoryRequest = z.infer<typeof generateStorySchema>;

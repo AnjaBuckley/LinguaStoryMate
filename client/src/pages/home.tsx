@@ -6,6 +6,7 @@ import { Link } from "wouter";
 import { ImageOff, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useInterfaceLanguage } from "@/hooks/use-interface-language";
+import LanguageToggle from "@/components/language-toggle";
 
 export default function Home() {
   const { texts } = useInterfaceLanguage();
@@ -20,12 +21,15 @@ export default function Home() {
           <h1 className="text-4xl font-bold text-primary">
             {texts.title}
           </h1>
-          <Button asChild variant="outline">
-            <Link href="/learning-preferences">
-              <Settings className="mr-2 h-4 w-4" />
-              {texts.settings}
-            </Link>
-          </Button>
+          <div className="flex gap-4 items-center">
+            <LanguageToggle />
+            <Button asChild variant="outline">
+              <Link href="/settings">
+                <Settings className="mr-2 h-4 w-4" />
+                {texts.settings}
+              </Link>
+            </Button>
+          </div>
         </div>
 
         <StoryGenerator />

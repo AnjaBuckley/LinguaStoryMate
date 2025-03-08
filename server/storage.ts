@@ -1,47 +1,34 @@
-import { users, stories, quizzes, vocabularyItems, games, learningProgress, learningPreferences, recommendations, type Story, type InsertStory, type Quiz, type InsertQuiz, type VocabularyItem, type InsertVocabularyItem, type Game, type InsertGame, type User, type InsertUser, type LearningProgress, type InsertLearningProgress, type LearningPreferences, type InsertLearningPreferences, type Recommendation, type InsertRecommendation } from "@shared/schema";
+import { users, stories, quizzes, vocabularyItems, type Story, type InsertStory, type Quiz, type InsertQuiz, type VocabularyItem, type InsertVocabularyItem, type User, type InsertUser } from "@shared/schema";
 import { db, checkDatabaseConnection } from "./db";
-import { eq, sql, and, desc } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import session from "express-session";
-import connectPg from "connect-pg-simple";
 import createMemoryStore from "memorystore";
 
 const MemoryStore = createMemoryStore(session);
 
 export interface IStorage {
+  // Story methods
   createStory(story: InsertStory): Promise<Story>;
   getStory(id: number): Promise<Story | undefined>;
   listStories(): Promise<Story[]>;
+
+  // Quiz methods
   createQuiz(quiz: InsertQuiz): Promise<Quiz>;
   getQuiz(storyId: number): Promise<Quiz | undefined>;
-  createVocabularyItem(item: InsertVocabularyItem): Promise<VocabularyItem>;
-  getVocabularyItems(storyId: number): Promise<VocabularyItem[]>;
-  createGame(game: InsertGame): Promise<Game>;
-  getGames(storyId: number): Promise<Game[]>;
 
   // User methods
   createUser(user: InsertUser): Promise<User>;
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  updateUser(id: number, data: Partial<User>): Promise<User>;
+  updateUserStreak(userId: number): Promise<User>;
+
+  // Vocabulary methods
+  createVocabularyItems(data: { userId: number; storyId: number; words: { sourceWord: string; targetWord: string; context?: string }[] }): Promise<VocabularyItem[]>;
+  getVocabularyItems(userId: number): Promise<VocabularyItem[]>;
 
   // Session store
   sessionStore: session.Store;
-
-  // Learning progress methods
-  createLearningProgress(progress: InsertLearningProgress): Promise<LearningProgress>;
-  getLearningProgress(userId: number, storyId: number): Promise<LearningProgress | undefined>;
-  updateLearningProgress(id: number, progress: Partial<InsertLearningProgress>): Promise<LearningProgress>;
-
-  // Learning preferences methods
-  createLearningPreferences(preferences: InsertLearningPreferences): Promise<LearningPreferences>;
-  getLearningPreferences(userId: number): Promise<LearningPreferences | undefined>;
-  updateLearningPreferences(userId: number, preferences: Partial<InsertLearningPreferences>): Promise<LearningPreferences>;
-
-  // Recommendation methods
-  createRecommendation(recommendation: InsertRecommendation): Promise<Recommendation>;
-  getRecommendations(userId: number): Promise<Recommendation[]>;
-  markRecommendationViewed(id: number): Promise<void>;
-  deleteUserRecommendations(userId: number): Promise<void>;
-  updateLearningStreak(userId: number): Promise<LearningPreferences>; // Added method
 }
 
 const MAX_RETRIES = 3;
@@ -113,38 +100,6 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async createVocabularyItem(item: InsertVocabularyItem): Promise<VocabularyItem> {
-    return withRetry(async () => {
-      const [newItem] = await db.insert(vocabularyItems).values(item).returning();
-      return newItem;
-    });
-  }
-
-  async getVocabularyItems(storyId: number): Promise<VocabularyItem[]> {
-    return withRetry(async () => {
-      return await db
-        .select()
-        .from(vocabularyItems)
-        .where(eq(vocabularyItems.storyId, storyId));
-    });
-  }
-
-  async createGame(game: InsertGame): Promise<Game> {
-    return withRetry(async () => {
-      const [newGame] = await db.insert(games).values(game).returning();
-      return newGame;
-    });
-  }
-
-  async getGames(storyId: number): Promise<Game[]> {
-    return withRetry(async () => {
-      return await db
-        .select()
-        .from(games)
-        .where(eq(games.storyId, storyId));
-    });
-  }
-
   async createUser(user: InsertUser): Promise<User> {
     return withRetry(async () => {
       const [newUser] = await db.insert(users).values(user).returning();
@@ -166,123 +121,27 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async createLearningProgress(progress: InsertLearningProgress): Promise<LearningProgress> {
-    return withRetry(async () => {
-      const [newProgress] = await db.insert(learningProgress).values(progress).returning();
-      return newProgress;
-    });
-  }
-
-  async getLearningProgress(userId: number, storyId: number): Promise<LearningProgress | undefined> {
-    return withRetry(async () => {
-      const [progress] = await db
-        .select()
-        .from(learningProgress)
-        .where(and(eq(learningProgress.userId, userId), eq(learningProgress.storyId, storyId)));
-      return progress;
-    });
-  }
-
-  async updateLearningProgress(id: number, progress: Partial<InsertLearningProgress>): Promise<LearningProgress> {
+  async updateUser(id: number, data: Partial<User>): Promise<User> {
     return withRetry(async () => {
       const [updated] = await db
-        .update(learningProgress)
-        .set(progress)
-        .where(eq(learningProgress.id, id))
+        .update(users)
+        .set(data)
+        .where(eq(users.id, id))
         .returning();
       return updated;
     });
   }
 
-  async createLearningPreferences(preferences: InsertLearningPreferences): Promise<LearningPreferences> {
+  async updateUserStreak(userId: number): Promise<User> {
     return withRetry(async () => {
-      const [newPreferences] = await db.insert(learningPreferences).values(preferences).returning();
-      return newPreferences;
-    });
-  }
+      const user = await this.getUser(userId);
+      if (!user) throw new Error("User not found");
 
-  async getLearningPreferences(userId: number): Promise<LearningPreferences | undefined> {
-    return withRetry(async () => {
-      const [preferences] = await db
-        .select()
-        .from(learningPreferences)
-        .where(eq(learningPreferences.userId, userId));
-      return preferences;
-    });
-  }
-
-  async updateLearningPreferences(userId: number, preferences: Partial<InsertLearningPreferences>): Promise<LearningPreferences> {
-    return withRetry(async () => {
-      const [updated] = await db
-        .update(learningPreferences)
-        .set({ ...preferences, updatedAt: new Date() })
-        .where(eq(learningPreferences.userId, userId))
-        .returning();
-      return updated;
-    });
-  }
-
-  async createRecommendation(recommendation: InsertRecommendation): Promise<Recommendation> {
-    return withRetry(async () => {
-      const [newRecommendation] = await db.insert(recommendations).values(recommendation).returning();
-      return newRecommendation;
-    });
-  }
-
-  async getRecommendations(userId: number): Promise<Recommendation[]> {
-    return withRetry(async () => {
-      const results = await db
-        .select({
-          id: recommendations.id,
-          userId: recommendations.userId,
-          storyId: recommendations.storyId,
-          reason: recommendations.reason,
-          priority: recommendations.priority,
-          viewed: recommendations.viewed,
-          story: {
-            id: stories.id,
-            title: stories.title,
-            difficulty: stories.difficulty,
-            sourceLanguage: stories.sourceLanguage,
-            targetLanguage: stories.targetLanguage,
-          },
-        })
-        .from(recommendations)
-        .leftJoin(stories, eq(recommendations.storyId, stories.id))
-        .where(eq(recommendations.userId, userId))
-        .orderBy(desc(recommendations.priority));
-
-      return results;
-    });
-  }
-
-  async markRecommendationViewed(id: number): Promise<void> {
-    return withRetry(async () => {
-      await db
-        .update(recommendations)
-        .set({ viewed: true })
-        .where(eq(recommendations.id, id));
-    });
-  }
-
-  async deleteUserRecommendations(userId: number): Promise<void> {
-    return withRetry(async () => {
-      await db
-        .delete(recommendations)
-        .where(eq(recommendations.userId, userId));
-    });
-  }
-
-  async updateLearningStreak(userId: number): Promise<LearningPreferences> {
-    return withRetry(async () => {
-      const preferences = await this.getLearningPreferences(userId);
-      if (!preferences) return preferences;
-
-      const lastActivity = new Date(preferences.lastActivityDate);
+      const lastActivity = new Date(user.lastActivityDate);
       const today = new Date();
       const diffDays = Math.floor((today.getTime() - lastActivity.getTime()) / (1000 * 60 * 60 * 24));
 
-      let currentStreak = preferences.currentStreak;
+      let currentStreak = user.currentStreak;
       if (diffDays === 1) {
         // Continue streak
         currentStreak += 1;
@@ -293,16 +152,39 @@ export class DatabaseStorage implements IStorage {
       // If diffDays === 0, keep current streak (same day)
 
       const [updated] = await db
-        .update(learningPreferences)
+        .update(users)
         .set({
           currentStreak,
-          lastActivityDate: new Date(),
-          updatedAt: new Date(),
+          lastActivityDate: new Date()
         })
-        .where(eq(learningPreferences.userId, userId))
+        .where(eq(users.id, userId))
         .returning();
 
       return updated;
+    });
+  }
+
+  async createVocabularyItems(data: { userId: number; storyId: number; words: { sourceWord: string; targetWord: string; context?: string }[] }): Promise<VocabularyItem[]> {
+    return withRetry(async () => {
+      const items = data.words.map(word => ({
+        userId: data.userId,
+        storyId: data.storyId,
+        sourceWord: word.sourceWord,
+        targetWord: word.targetWord,
+        context: word.context,
+      }));
+
+      return await db.insert(vocabularyItems).values(items).returning();
+    });
+  }
+
+  async getVocabularyItems(userId: number): Promise<VocabularyItem[]> {
+    return withRetry(async () => {
+      return await db
+        .select()
+        .from(vocabularyItems)
+        .where(eq(vocabularyItems.userId, userId))
+        .orderBy(sql`${vocabularyItems.createdAt} DESC`);
     });
   }
 }
