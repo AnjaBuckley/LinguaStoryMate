@@ -110,7 +110,10 @@ export default function VocabularyGame({ storyId, sourceLanguage, targetLanguage
               Congratulations! 🎉
             </h3>
             <p className="mb-4">You've matched all the words correctly!</p>
-            <Button onClick={() => {playSound("complete"); window.location.reload()}}>
+            <Button onClick={() => {
+              playSound("celebration");
+              window.location.reload();
+            }}>
               Play Again
             </Button>
           </div>
