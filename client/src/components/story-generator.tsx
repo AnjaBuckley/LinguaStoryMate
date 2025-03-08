@@ -27,6 +27,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useInterfaceLanguage } from "@/hooks/use-interface-language";
 import LearningBuddy from "./learning-buddy";
 
+const AVAILABLE_LANGUAGES = [
+  "English",
+  "Deutsch",
+  "Français",
+  "Español",
+  "Italiano"
+];
+
 export default function StoryGenerator() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -37,7 +45,7 @@ export default function StoryGenerator() {
   const form = useForm<GenerateStoryRequest>({
     resolver: zodResolver(generateStorySchema),
     defaultValues: {
-      sourceLanguage: "English",
+      sourceLanguage: "",
       targetLanguage: "",
       difficulty: "beginner",
       topic: "",
@@ -78,6 +86,64 @@ export default function StoryGenerator() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="sourceLanguage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{texts.learnLanguage}</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={texts.selectLanguage} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {AVAILABLE_LANGUAGES.map((lang) => (
+                          <SelectItem key={lang} value={lang}>
+                            {lang}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="targetLanguage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{texts.motherTongue}</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={texts.selectLanguage} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {AVAILABLE_LANGUAGES.map((lang) => (
+                          <SelectItem key={lang} value={lang}>
+                            {lang}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control}
               name="difficulty"

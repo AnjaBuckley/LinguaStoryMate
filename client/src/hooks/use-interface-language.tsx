@@ -20,7 +20,10 @@ export const LANGUAGES = {
     selectDifficulty: "Select difficulty",
     beginner: "Beginner",
     intermediate: "Intermediate",
-    advanced: "Advanced"
+    advanced: "Advanced",
+    learnLanguage: "Language you want to learn",
+    motherTongue: "Your mother tongue",
+    selectLanguage: "Select language"
   },
   "Deutsch": {
     title: "Sprachlern-Abenteuer",
@@ -38,7 +41,10 @@ export const LANGUAGES = {
     selectDifficulty: "Schwierigkeit auswählen",
     beginner: "Anfänger",
     intermediate: "Fortgeschritten",
-    advanced: "Experte"
+    advanced: "Experte",
+    learnLanguage: "Sprache, die du lernen möchtest",
+    motherTongue: "Deine Muttersprache",
+    selectLanguage: "Sprache auswählen"
   },
   "Français": {
     title: "Aventures d'Apprentissage des Langues",
@@ -56,7 +62,10 @@ export const LANGUAGES = {
     selectDifficulty: "Sélectionnez la difficulté",
     beginner: "Débutant",
     intermediate: "Intermédiaire",
-    advanced: "Avancé"
+    advanced: "Avancé",
+    learnLanguage: "Langue que vous souhaitez apprendre",
+    motherTongue: "Votre langue maternelle",
+    selectLanguage: "Sélectionner la langue"
   },
   "Español": {
     title: "Aventuras de Aprendizaje de Idiomas",
@@ -74,7 +83,10 @@ export const LANGUAGES = {
     selectDifficulty: "Seleccionar dificultad",
     beginner: "Principiante",
     intermediate: "Intermedio",
-    advanced: "Avanzado"
+    advanced: "Avanzado",
+    learnLanguage: "Idioma que quieres aprender",
+    motherTongue: "Tu lengua materna",
+    selectLanguage: "Seleccionar idioma"
   },
   "Italiano": {
     title: "Avventure di Apprendimento Linguistico",
@@ -92,7 +104,10 @@ export const LANGUAGES = {
     selectDifficulty: "Seleziona difficoltà",
     beginner: "Principiante",
     intermediate: "Intermedio",
-    advanced: "Avanzato"
+    advanced: "Avanzato",
+    learnLanguage: "Lingua che vuoi imparare",
+    motherTongue: "La tua lingua madre",
+    selectLanguage: "Seleziona lingua"
   }
 };
 
