@@ -2,13 +2,12 @@ import { jsPDF } from "jspdf";
 import type { Story } from "@shared/schema";
 
 export async function exportStoryToPDF(story: Story): Promise<void> {
-  // Create PDF with font support
-  const pdf = new jsPDF({
-    filters: ["ASCIIHexEncode"] // This helps with Japanese text encoding
-  });
-
+  const pdf = new jsPDF();
   const margin = 20;
   const pageWidth = pdf.internal.pageSize.width - 2 * margin;
+
+  // Set fonts and styles
+  pdf.setFont("helvetica");
 
   // Add title
   pdf.setFontSize(24);
@@ -24,9 +23,7 @@ export async function exportStoryToPDF(story: Story): Promise<void> {
   // Add image
   try {
     const imageHeight = 60;
-    // Extract the base64 data from the data URL
-    const base64Data = story.imageUrl.split(',')[1];
-    pdf.addImage(base64Data, "JPEG", margin, 45, pageWidth - margin, imageHeight);
+    pdf.addImage(story.imageUrl, "JPEG", margin, 45, pageWidth - margin, imageHeight);
 
     // Add story content
     pdf.setFontSize(14);
@@ -47,15 +44,17 @@ export async function exportStoryToPDF(story: Story): Promise<void> {
     pdf.setTextColor(33, 33, 33);
 
     Object.entries(story.translations).forEach(([phrase, translation]) => {
-      // Source phrase in bold color
+      // Source phrase
+      pdf.setFont("helvetica", "bold");
       const sourceLines = pdf.splitTextToSize(phrase, pageWidth - 2 * margin);
       pdf.text(sourceLines, margin, y);
       y += sourceLines.length * 7;
 
-      // Translation in gray
+      // Translation
+      pdf.setFont("helvetica", "normal");
       pdf.setTextColor(100, 100, 100);
       const translationLines = pdf.splitTextToSize(translation, pageWidth - 2 * margin);
-      pdf.text(translationLines, margin + 10, y);
+      pdf.text(translationLines, margin, y);
       y += translationLines.length * 7 + 10;
 
       // Add new page if needed
@@ -66,7 +65,9 @@ export async function exportStoryToPDF(story: Story): Promise<void> {
     });
 
   } catch (error) {
-    console.error("Failed to process image:", error);
+    // If image loading fails, continue without the image
+    console.error("Failed to load image:", error);
+
     // Add content without image
     pdf.setFontSize(14);
     pdf.setTextColor(33, 33, 33);
