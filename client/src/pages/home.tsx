@@ -11,7 +11,7 @@ import LanguageToggle from "@/components/language-toggle";
 export default function Home() {
   const { texts } = useInterfaceLanguage();
   const { data: stories, isLoading } = useQuery<Story[]>({
-    queryKey: ["/api/stories"],
+    queryKey: ["/api/stories?limit=6"], // Add limit parameter to only fetch latest 6
   });
 
   return (
@@ -34,7 +34,14 @@ export default function Home() {
 
         <StoryGenerator />
 
-        <h2 className="text-2xl font-semibold mt-12 mb-6">{texts.stories}</h2>
+        <div className="flex justify-between items-center mt-12 mb-6">
+          <h2 className="text-2xl font-semibold">{texts.stories}</h2>
+          <Button variant="ghost" asChild>
+            <Link href="/settings">
+              View All Stories →
+            </Link>
+          </Button>
+        </div>
 
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

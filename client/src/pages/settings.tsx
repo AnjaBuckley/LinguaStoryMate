@@ -20,7 +20,11 @@ import { useInterfaceLanguage } from "@/hooks/use-interface-language";
 import { Home, Flame, User as UserIcon } from "lucide-react";
 import { Link } from "wouter";
 import LanguageToggle from "@/components/language-toggle";
-import LearningProgress from "@/components/learning-progress"; 
+import LearningProgress from "@/components/learning-progress";
+import { Story } from "@shared/schema";
+import { format } from "date-fns";
+import { Book } from "lucide-react"; // Assuming Book is a Lucide icon
+
 
 export default function SettingsPage() {
   const { toast } = useToast();
@@ -102,6 +106,10 @@ export default function SettingsPage() {
     setIsResetting(true);
     resetPasswordMutation.mutate(email);
   };
+
+  const { data: stories = [] } = useQuery<Story[]>({
+    queryKey: ["/api/stories"],
+  });
 
   if (isLoading) {
     return (
@@ -213,8 +221,47 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          {user && <LearningProgress user={user} />} 
+          {user && <LearningProgress user={user} />}
 
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Book className="h-6 w-6" />
+                {texts.myStories || "My Stories"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {stories.length === 0 ? (
+                <p className="text-center text-muted-foreground">
+                  {texts.noStoriesYet || "No stories created yet."}
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {stories.map((story) => (
+                    <div
+                      key={story.id}
+                      className="flex items-center justify-between p-4 rounded-lg bg-muted/50"
+                    >
+                      <div>
+                        <h3 className="font-medium">{story.title}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {story.sourceLanguage} → {story.targetLanguage}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(story.createdAt), 'PPP')}
+                        </p>
+                      </div>
+                      <Button variant="ghost" asChild>
+                        <Link href={`/story/${story.id}`}>
+                          View Story →
+                        </Link>
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

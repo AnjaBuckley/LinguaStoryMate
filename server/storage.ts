@@ -14,7 +14,7 @@ export interface IStorage {
   // Story methods
   createStory(story: InsertStory): Promise<Story>;
   getStory(id: number): Promise<Story | undefined>;
-  listStories(): Promise<Story[]>;
+  listStories(limit?: number): Promise<Story[]>;
 
   // Quiz methods
   createQuiz(quiz: InsertQuiz): Promise<Quiz>;
@@ -84,13 +84,18 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async listStories(): Promise<Story[]> {
+  async listStories(limit?: number): Promise<Story[]> {
     return withRetry(async () => {
-      return await db
+      let query = db
         .select()
         .from(stories)
-        .orderBy(sql`${stories.createdAt} DESC`)
-        .limit(6);
+        .orderBy(sql`${stories.createdAt} DESC`);
+
+      if (limit) {
+        query = query.limit(limit);
+      }
+
+      return await query;
     });
   }
 

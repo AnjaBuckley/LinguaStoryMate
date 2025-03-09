@@ -125,7 +125,8 @@ export async function registerRoutes(app: Express) {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: "Not authenticated" });
     }
-    const stories = await storage.listStories();
+    const limit = req.query.limit ? Number(req.query.limit) : undefined;
+    const stories = await storage.listStories(limit);
     res.json(stories.filter((story) => story.userId === req.user.id));
   });
 
