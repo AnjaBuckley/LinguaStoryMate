@@ -21,12 +21,6 @@ export default function StoryView() {
     queryKey: [`/api/stories/${id}`],
   });
 
-  // Add query for vocabulary items
-  const { data: vocabularyItems = [] } = useQuery({
-    queryKey: [`/api/vocabulary/${id}`],
-    enabled: !!id,
-  });
-
   const completeStoryMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", `/api/stories/${id}/complete`, {
@@ -84,6 +78,15 @@ export default function StoryView() {
   if (!story) {
     return <div>Story not found</div>;
   }
+
+  // Convert translations object to vocabulary items format
+  const vocabularyItems = Object.entries(story.translations).map(([source, target], index) => ({
+    id: index,
+    sourceWord: source,
+    targetWord: target,
+    targetLanguage: story.sourceLanguage, // Use the story's source language for pronunciation
+    context: null
+  }));
 
   return (
     <div className="min-h-screen bg-background p-8">
