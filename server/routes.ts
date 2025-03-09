@@ -6,6 +6,7 @@ import { generateStorySchema } from "@shared/schema";
 import { setupAuth } from "./auth";
 import { createTransport } from "nodemailer";
 import { randomBytes } from "crypto";
+import openai from "./openai"; //Import openai
 
 // Configure nodemailer
 const transporter = createTransport({
@@ -193,6 +194,38 @@ export async function registerRoutes(app: Express) {
       }
 
       res.json({ user, vocabularyItems });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  // Add this to the existing routes in registerRoutes function
+  app.post("/api/check-pronunciation", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { spoken, target, language } = req.body;
+
+      // Use OpenAI to analyze pronunciation
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are a language learning assistant that provides friendly and constructive feedback on pronunciation. Focus on encouraging the learner while providing specific tips for improvement. Format the response as JSON with a 'feedback' field."
+          },
+          {
+            role: "user",
+            content: `The user is learning ${language}. They were trying to pronounce "${target}" and said "${spoken}". Provide feedback on their pronunciation.`
+          }
+        ],
+        response_format: { type: "json_object" }
+      });
+
+      const feedback = JSON.parse(response.choices[0].message.content);
+      res.json(feedback);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }
