@@ -232,6 +232,43 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // Add this route to handle story translation previews
+  app.post("/api/stories/:id/translate-preview", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { targetLanguage } = req.body;
+      const story = await storage.getStory(Number(req.params.id));
+
+      if (!story) {
+        return res.status(404).json({ error: "Story not found" });
+      }
+
+      // Use OpenAI to translate the story
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are a professional translator. Translate the following story while maintaining its style and meaning. Return the result as JSON with a 'translation' field containing the translated text."
+          },
+          {
+            role: "user",
+            content: `Please translate this story from ${story.sourceLanguage} to ${targetLanguage}:\n\n${story.content}`
+          }
+        ],
+        response_format: { type: "json_object" }
+      });
+
+      const result = JSON.parse(response.choices[0].message.content);
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

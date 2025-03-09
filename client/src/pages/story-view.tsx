@@ -11,6 +11,7 @@ import { useLearningCelebration } from "@/hooks/use-learning-celebration";
 import ConfettiBurst from "@/components/confetti-burst";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import VocabularyPractice from "@/components/vocabulary-practice";
+import TranslationPreview from "@/components/translation-preview";
 
 export default function StoryView() {
   const { id } = useParams();
@@ -120,6 +121,14 @@ export default function StoryView() {
 
             <div className="mt-6 prose max-w-none">
               <p className="text-xl">{story.content}</p>
+            </div>
+
+            <div className="mt-8">
+              <h3 className="text-xl font-semibold mb-4">Translation Preview</h3>
+              <TranslationPreview 
+                storyId={story.id} 
+                currentLanguage={story.sourceLanguage}
+              />
             </div>
 
             <div className="mt-8 bg-accent/10 p-6 rounded-lg">
