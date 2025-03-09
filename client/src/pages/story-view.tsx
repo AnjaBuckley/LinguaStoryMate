@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLearningCelebration } from "@/hooks/use-learning-celebration";
 import ConfettiBurst from "@/components/confetti-burst";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import VocabularyPractice from "@/components/vocabulary-practice";
 
 export default function StoryView() {
   const { id } = useParams();
@@ -18,6 +19,12 @@ export default function StoryView() {
 
   const { data: story, isLoading } = useQuery<Story>({
     queryKey: [`/api/stories/${id}`],
+  });
+
+  // Add query for vocabulary items
+  const { data: vocabularyItems = [] } = useQuery({
+    queryKey: [`/api/vocabulary/${id}`],
+    enabled: !!id,
   });
 
   const completeStoryMutation = useMutation({
@@ -121,6 +128,11 @@ export default function StoryView() {
                   <span>{translation}</span>
                 </div>
               ))}
+            </div>
+
+            {/* Add Vocabulary Practice section */}
+            <div className="mt-8">
+              <VocabularyPractice vocabulary={vocabularyItems} />
             </div>
           </CardContent>
         </Card>
