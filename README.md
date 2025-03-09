@@ -1,7 +1,9 @@
 **Language Learning Adventures**
+
 A kid-friendly AI-powered platform that makes language learning fun and engaging through interactive stories and achievements.
 
 **Key Features:**
+
 ✅ Personalized Story Generation
 Users can generate custom stories based on their chosen topic
 Supports 16+ languages for learning and native language comprehension
@@ -51,11 +53,13 @@ Completed Stories (progress tracking)
 Vocabulary Items (learning tracking)
 
 **Deployment:**
+
 Hosted on Replit
 Automatic HTTPS/TLS
 Built-in CI/CD
 
 **How to Use:**
+
 Create an account or log in
 Choose your learning language and native language
 Select a topic and difficulty level
