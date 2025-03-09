@@ -59,6 +59,7 @@ export const vocabularyItems = pgTable("vocabulary_items", {
   learned: boolean("learned").default(false),
   reviewedAt: timestamp("reviewed_at"),
   createdAt: timestamp("created_at").defaultNow(),
+  targetLanguage: text("target_language").notNull(),
 });
 
 export const quizzes = pgTable("quizzes", {

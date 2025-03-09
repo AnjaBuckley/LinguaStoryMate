@@ -21,10 +21,25 @@ export default function VocabularyPractice({ vocabulary }: VocabularyPracticePro
     setFeedback(null);
   };
 
+  if (!vocabulary.length) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Vocabulary Practice</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-center text-muted-foreground">
+            No vocabulary items available for practice.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Vocabulary Practice</CardTitle>
+        <CardTitle>Practice Pronunciation</CardTitle>
       </CardHeader>
       <CardContent>
         {currentWord && (
@@ -47,10 +62,13 @@ export default function VocabularyPractice({ vocabulary }: VocabularyPracticePro
               )}
             </div>
 
-            <div className="flex justify-center">
+            <div className="flex flex-col items-center gap-4">
+              <p className="text-sm text-muted-foreground">
+                Click the microphone to practice pronunciation
+              </p>
               <SpeechRecognitionPractice
                 word={currentWord.sourceWord}
-                targetLanguage={currentWord.targetLanguage}
+                targetLanguage={currentWord.targetLanguage || 'en'}
                 onPronunciationFeedback={(feedback) => setFeedback(feedback)}
               />
             </div>
@@ -65,10 +83,13 @@ export default function VocabularyPractice({ vocabulary }: VocabularyPracticePro
               </motion.div>
             )}
 
-            <div className="flex justify-end mt-4">
+            <div className="flex justify-between items-center mt-4">
+              <p className="text-sm text-muted-foreground">
+                Word {currentIndex + 1} of {vocabulary.length}
+              </p>
               <button
                 onClick={handleNext}
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                className="text-sm text-primary hover:text-primary/80 transition-colors"
               >
                 Next word →
               </button>
