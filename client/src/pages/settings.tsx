@@ -109,6 +109,7 @@ export default function SettingsPage() {
 
   const { data: stories = [] } = useQuery<Story[]>({
     queryKey: ["/api/stories"],
+    select: (data) => data.filter((story) => story.userId === user?.id),
   });
 
   if (isLoading) {

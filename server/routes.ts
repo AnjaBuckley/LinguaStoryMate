@@ -127,7 +127,9 @@ export async function registerRoutes(app: Express) {
     }
     const limit = req.query.limit ? Number(req.query.limit) : undefined;
     const stories = await storage.listStories(limit);
-    res.json(stories.filter((story) => story.userId === req.user.id));
+    // Filter stories for the current user
+    const userStories = stories.filter((story) => story.userId === req.user.id);
+    res.json(userStories);
   });
 
   app.get("/api/stories/:id", async (req, res) => {
