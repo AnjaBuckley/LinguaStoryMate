@@ -18,60 +18,79 @@ export default function SpeechRecognitionPractice({
 }: SpeechRecognitionPracticeProps) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
+  const [isSupported, setIsSupported] = useState(true);
   const { toast } = useToast();
-  const recognitionRef = useRef<any>(null);
 
-  // Initialize speech recognition
+  // Check browser support
   useEffect(() => {
-    if (!('webkitSpeechRecognition' in window)) {
+    const supported = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+    setIsSupported(supported);
+    if (!supported) {
       toast({
         title: "Speech Recognition Not Available",
-        description: "Your browser doesn't support speech recognition.",
+        description: "Your browser doesn't support speech recognition. Please try Chrome or Edge.",
         variant: "destructive",
       });
-      return;
     }
+  }, []);
 
-    // Create a single instance of recognition
-    const recognition = new (window as any).webkitSpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = targetLanguage;
+  const startListening = () => {
+    try {
+      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+      const recognition = new SpeechRecognition();
 
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setTranscript(transcript);
-      checkPronunciationMutation.mutate({ 
-        spoken: transcript,
-        target: word,
-        language: targetLanguage
-      });
-    };
+      recognition.lang = targetLanguage;
+      recognition.continuous = false;
+      recognition.interimResults = false;
 
-    recognition.onerror = (event: any) => {
-      console.error('Speech recognition error:', event.error);
-      setIsListening(false);
+      recognition.onstart = () => {
+        setIsListening(true);
+        setTranscript("");
+        toast({
+          title: "Listening",
+          description: "Speak now...",
+        });
+      };
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setTranscript(transcript);
+        checkPronunciationMutation.mutate({ 
+          spoken: transcript,
+          target: word,
+          language: targetLanguage
+        });
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+        toast({
+          title: "Error",
+          description: `Speech recognition error: ${event.error}. Please try again.`,
+          variant: "destructive",
+        });
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognition.start();
+    } catch (error) {
+      console.error('Failed to start speech recognition:', error);
       toast({
         title: "Error",
-        description: "There was an error with speech recognition. Please try again.",
+        description: "Failed to start speech recognition. Please try again.",
         variant: "destructive",
       });
-    };
-
-    recognition.onend = () => {
       setIsListening(false);
-    };
+    }
+  };
 
-    // Store the recognition instance in ref
-    recognitionRef.current = recognition;
-
-    // Cleanup
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.abort();
-      }
-    };
-  }, [targetLanguage, word]);
+  const stopListening = () => {
+    setIsListening(false);
+  };
 
   // Pronunciation check mutation
   const checkPronunciationMutation = useMutation({
@@ -97,21 +116,6 @@ export default function SpeechRecognitionPractice({
     },
   });
 
-  const startListening = () => {
-    if (recognitionRef.current) {
-      setIsListening(true);
-      setTranscript("");
-      recognitionRef.current.start();
-    }
-  };
-
-  const stopListening = () => {
-    if (recognitionRef.current) {
-      setIsListening(false);
-      recognitionRef.current.stop();
-    }
-  };
-
   // Text-to-speech function
   const speakWord = () => {
     const utterance = new SpeechSynthesisUtterance(word);
@@ -134,7 +138,7 @@ export default function SpeechRecognitionPractice({
         variant={isListening ? "destructive" : "default"}
         onClick={isListening ? stopListening : startListening}
         className="w-32"
-        disabled={!('webkitSpeechRecognition' in window)}
+        disabled={!isSupported}
       >
         {isListening ? (
           <>
