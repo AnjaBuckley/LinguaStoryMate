@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Mic, StopCircle, Volume2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
@@ -19,8 +19,9 @@ export default function SpeechRecognitionPractice({
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const { toast } = useToast();
-  
-  // Speech recognition setup
+  const recognitionRef = useRef<any>(null);
+
+  // Initialize speech recognition
   useEffect(() => {
     if (!('webkitSpeechRecognition' in window)) {
       toast({
@@ -31,6 +32,7 @@ export default function SpeechRecognitionPractice({
       return;
     }
 
+    // Create a single instance of recognition
     const recognition = new (window as any).webkitSpeechRecognition();
     recognition.continuous = false;
     recognition.interimResults = false;
@@ -60,8 +62,14 @@ export default function SpeechRecognitionPractice({
       setIsListening(false);
     };
 
+    // Store the recognition instance in ref
+    recognitionRef.current = recognition;
+
+    // Cleanup
     return () => {
-      recognition.abort();
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
     };
   }, [targetLanguage, word]);
 
@@ -90,16 +98,18 @@ export default function SpeechRecognitionPractice({
   });
 
   const startListening = () => {
-    setIsListening(true);
-    setTranscript("");
-    const recognition = new (window as any).webkitSpeechRecognition();
-    recognition.start();
+    if (recognitionRef.current) {
+      setIsListening(true);
+      setTranscript("");
+      recognitionRef.current.start();
+    }
   };
 
   const stopListening = () => {
-    setIsListening(false);
-    const recognition = new (window as any).webkitSpeechRecognition();
-    recognition.stop();
+    if (recognitionRef.current) {
+      setIsListening(false);
+      recognitionRef.current.stop();
+    }
   };
 
   // Text-to-speech function
@@ -119,11 +129,12 @@ export default function SpeechRecognitionPractice({
       >
         <Volume2 className="h-4 w-4" />
       </Button>
-      
+
       <Button
         variant={isListening ? "destructive" : "default"}
         onClick={isListening ? stopListening : startListening}
         className="w-32"
+        disabled={!('webkitSpeechRecognition' in window)}
       >
         {isListening ? (
           <>
