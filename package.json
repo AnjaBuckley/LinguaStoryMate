@@ -56,7 +56,7 @@
     "express-session": "^1.18.1",
     "framer-motion": "^11.18.2",
     "input-otp": "^1.2.4",
-    "jspdf": "^3.0.0",
+    "jspdf": "^3.0.1",
     "lucide-react": "^0.453.0",
     "memorystore": "^1.6.7",
     "node-fetch": "^3.3.2",
