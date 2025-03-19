@@ -11,6 +11,13 @@ interface SpeechRecognitionPracticeProps {
   onPronunciationFeedback?: (feedback: string) => void;
 }
 
+declare global {
+  interface Window {
+    webkitSpeechRecognition: any;
+    SpeechRecognition: any;
+  }
+}
+
 export default function SpeechRecognitionPractice({ 
   word, 
   targetLanguage,
@@ -20,6 +27,7 @@ export default function SpeechRecognitionPractice({
   const [transcript, setTranscript] = useState("");
   const [isSupported, setIsSupported] = useState(true);
   const { toast } = useToast();
+  const recognitionRef = useRef<any>(null);
 
   // Check browser support
   useEffect(() => {
@@ -32,51 +40,58 @@ export default function SpeechRecognitionPractice({
         variant: "destructive",
       });
     }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
   }, []);
 
   const startListening = () => {
     try {
-      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-      const recognition = new SpeechRecognition();
+      const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+      if (!recognitionRef.current) {
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.lang = targetLanguage;
+        recognitionRef.current.continuous = false;
+        recognitionRef.current.interimResults = false;
 
-      recognition.lang = targetLanguage;
-      recognition.continuous = false;
-      recognition.interimResults = false;
+        recognitionRef.current.onstart = () => {
+          setIsListening(true);
+          setTranscript("");
+          toast({
+            title: "Listening",
+            description: "Speak now...",
+          });
+        };
 
-      recognition.onstart = () => {
-        setIsListening(true);
-        setTranscript("");
-        toast({
-          title: "Listening",
-          description: "Speak now...",
-        });
-      };
+        recognitionRef.current.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          setTranscript(transcript);
+          checkPronunciationMutation.mutate({ 
+            spoken: transcript,
+            target: word,
+            language: targetLanguage
+          });
+        };
 
-      recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        setTranscript(transcript);
-        checkPronunciationMutation.mutate({ 
-          spoken: transcript,
-          target: word,
-          language: targetLanguage
-        });
-      };
+        recognitionRef.current.onerror = (event: any) => {
+          console.error('Speech recognition error:', event.error);
+          setIsListening(false);
+          toast({
+            title: "Error",
+            description: `Speech recognition error: ${event.error}. Please try again.`,
+            variant: "destructive",
+          });
+        };
 
-      recognition.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
-        setIsListening(false);
-        toast({
-          title: "Error",
-          description: `Speech recognition error: ${event.error}. Please try again.`,
-          variant: "destructive",
-        });
-      };
+        recognitionRef.current.onend = () => {
+          setIsListening(false);
+        };
+      }
 
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-
-      recognition.start();
+      recognitionRef.current.start();
     } catch (error) {
       console.error('Failed to start speech recognition:', error);
       toast({
@@ -89,6 +104,9 @@ export default function SpeechRecognitionPractice({
   };
 
   const stopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
     setIsListening(false);
   };
 
