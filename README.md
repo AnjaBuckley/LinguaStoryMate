@@ -1,6 +1,16 @@
 **Language Learning Adventures**
 
 A kid-friendly AI-powered platform that makes language learning fun and engaging through interactive stories and achievements.
+<img width="1305" alt="Screenshot 2025-03-29 at 13 43 20" src="https://github.com/user-attachments/assets/22b4c46d-f143-4c25-8db7-d6945ffc2808" />
+
+<img width="1095" alt="Screenshot 2025-03-29 at 13 43 33" src="https://github.com/user-attachments/assets/765173e7-2b1d-4586-bebe-d44411529c9d" />
+
+<img width="923" alt="Screenshot 2025-03-29 at 13 43 47" src="https://github.com/user-attachments/assets/d4341df6-cd42-4b75-adf5-77e49b0c3f5b" />
+
+<img width="843" alt="Screenshot 2025-03-29 at 13 43 57" src="https://github.com/user-attachments/assets/5c07050b-d7a6-4c5b-8b4e-18befe81873f" />
+
+<img width="1441" alt="Screenshot 2025-03-29 at 13 44 16" src="https://github.com/user-attachments/assets/edae0c93-02fe-4caa-a3b9-61bd42468907" />
+
 
 **Key Features:**
 
