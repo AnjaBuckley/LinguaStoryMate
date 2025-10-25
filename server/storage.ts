@@ -1,14 +1,14 @@
 import { pgTable, text, serial, json, timestamp, integer, boolean } from "drizzle-orm/pg-core";
-import { db, checkDatabaseConnection } from "./db";
+import { db, checkDatabaseConnection, pool } from "./db";
 import { eq, sql, and } from "drizzle-orm";
 import session from "express-session";
-import createMemoryStore from "memorystore";
+import connectPgSimple from "connect-pg-simple";
 import { randomBytes, scrypt } from 'crypto';
 import { promisify } from 'util';
 import { users, stories, quizzes, vocabularyItems, completedStories, type Story, type InsertStory, type Quiz, type InsertQuiz, type VocabularyItem, type InsertVocabularyItem, type User, type InsertUser } from "@shared/schema";
 
 const scryptAsync = promisify(scrypt);
-const MemoryStore = createMemoryStore(session);
+const PostgresStore = connectPgSimple(session);
 
 export interface IStorage {
   // Story methods
@@ -65,8 +65,13 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
   constructor() {
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000 // prune expired entries every 24h
+    // Use PostgreSQL-backed session store for production
+    // This ensures sessions persist across server restarts
+    this.sessionStore = new PostgresStore({
+      pool: pool as any,
+      tableName: 'session',
+      createTableIfMissing: true,
+      pruneSessionInterval: 60 * 15, // Prune expired sessions every 15 minutes
     });
   }
 
