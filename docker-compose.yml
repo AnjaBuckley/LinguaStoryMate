@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: linguastorymate-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: linguastorymate
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Application (Development mode)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: linguastorymate-app
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      # Database connection
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/linguastorymate
+
+      # Server configuration
+      PORT: 5000
+      NODE_ENV: production
+
+      # Session secret (change in production!)
+      SESSION_SECRET: development_secret_change_in_production
+
+      # OpenAI API key (required - must be set in .env file)
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+
+      # Email configuration (optional)
+      EMAIL_USER: ${EMAIL_USER:-}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
+      APP_URL: ${APP_URL:-http://localhost:5000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      # Mount node_modules for development (optional)
+      # Uncomment for development with hot reload
+      # - ./client:/app/client
+      # - ./server:/app/server
+      # - ./shared:/app/shared
+      - /app/node_modules
+
+volumes:
+  postgres_data:
+    driver: local
